@@ -1,0 +1,189 @@
+.auth-wrap {
+  padding: 40px 16px 56px;
+  border: 1px solid var(--line-soft);
+  display: flex;
+  justify-content: center;
+}
+
+/* Thẻ trắng có viền sáng màu bạc hà như trong bản thiết kế */
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 22px 14px 28px;
+  background: var(--bg);
+  box-shadow: 0 0 36px 10px var(--mint-glow);
+  text-align: left;
+}
+
+.auth-card__title {
+  margin: 0 0 22px;
+  text-align: center;
+  font-size: 19px;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--text-title);
+}
+.auth-card__subtitle {
+  margin: 0 0 14px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* ---------- Nút Facebook / Google ---------- */
+.social {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.social__btn {
+  display: flex;
+  align-items: stretch;
+  width: 83px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  color: var(--text-on-green);
+  font-size: 9px;
+  overflow: hidden;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.social__btn--fb {
+  background: var(--facebook);
+}
+.social__btn--gg {
+  background: var(--google);
+}
+.social__icon {
+  flex: 0 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 13px;
+  font-weight: 700;
+}
+.social__label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Ô nhập liệu ---------- */
+.auth-field {
+  margin-bottom: 12px;
+}
+.auth-field__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-title);
+}
+.auth-field__req {
+  margin-left: 2px;
+  color: var(--required);
+}
+.auth-field__input {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--bg);
+  color: var(--text-title);
+  font: inherit;
+  font-size: 13.5px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.auth-field__input::placeholder {
+  color: var(--text-placeholder);
+}
+.auth-field__input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-soft);
+}
+.auth-field__input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+.auth-field__input:disabled {
+  background: var(--bg-disabled);
+  color: var(--text-disabled);
+}
+
+/* ---------- Thông báo ---------- */
+.auth-msg {
+  margin: 4px 0 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.auth-msg--error {
+  border-left: 3px solid var(--error);
+  background: var(--error-bg);
+  color: var(--error-dark);
+}
+.auth-msg--ok {
+  border-left: 3px solid var(--green);
+  background: var(--success-bg);
+  color: var(--green-hover);
+}
+
+/* ---------- Nút chính và liên kết ---------- */
+.auth-btn {
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--green);
+  color: var(--text-on-green);
+  font: inherit;
+  font-size: 13px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.auth-btn:hover:not(:disabled) {
+  background: var(--green-hover);
+}
+.auth-btn:disabled {
+  background: var(--green-disabled);
+  cursor: progress;
+}
+.auth-btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.auth-link {
+  color: var(--green);
+  text-underline-offset: 3px;
+}
+.auth-link:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Đăng ký: nút ở giữa, link "Đăng nhập" nằm cạnh */
+.auth-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 22px;
+}
+
+/* Đăng nhập: nút bên trái, link nằm dưới */
+.auth-extra {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.auth-extra + .auth-extra {
+  margin-top: 8px;
+}

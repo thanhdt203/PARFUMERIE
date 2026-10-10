@@ -1,0 +1,50 @@
+/* ==========================================================
+   Biến dùng chung toàn site (màu, font).
+   Chỉ sửa giá trị ở đây, không gõ cứng mã màu trong file CSS khác.
+   ========================================================== */
+:root {
+  /* ---------- Màu thương hiệu ---------- */
+  --green: #0f4c35;          /* màu chủ đạo: thanh trên/dưới, nút, link, viền focus */
+  --green-hover: #0b3a29;    /* nút khi rê chuột */
+  --green-disabled: #6f8f82; /* nút bị vô hiệu hóa */
+  --green-deep: #0a2f22;     /* dải cuối footer (đậm hơn --green) */
+  --green-soft: rgba(15, 76, 53, 0.15); /* vòng sáng khi focus ô nhập */
+  --mint: #7ef0cc;           /* màu bạc hà nhấn */
+  --mint-glow: rgba(126, 240, 204, 0.55); /* viền sáng của thẻ đăng nhập/đăng ký */
+
+  /* ---------- Chữ ---------- */
+  --text-strong: #111;       /* menu, tiêu đề đậm */
+  --text: #333;              /* chữ thường */
+  --text-title: #222;        /* tiêu đề thẻ, label */
+  --text-muted: #555;        /* chữ phụ, phụ đề */
+  --text-soft: #444;         /* link breadcrumb, đoạn chữ nhỏ dưới form */
+  --text-placeholder: #9a9a9a;
+  --text-disabled: #888;
+  --text-on-green: #fff;     /* chữ trên nền xanh */
+
+  /* ---------- Nền và viền ---------- */
+  --bg: #fff;
+  --bg-soft: #f6f6f6;        /* nền breadcrumb */
+  --bg-disabled: #f3f3f3;    /* ô nhập bị khóa */
+  --line: #e6e6e6;           /* viền ô nhập, đường kẻ */
+  --line-soft: #eee;         /* viền ngoài nhẹ */
+
+  /* ---------- Trạng thái ---------- */
+  --error: #c0261b;
+  --error-dark: #a31f15;     /* chữ thông báo lỗi */
+  --error-bg: #fdf0ef;
+  --success-bg: #eaf6f0;
+  --required: #d0021b;       /* dấu * bắt buộc */
+
+  /* ---------- Mạng xã hội / liên hệ ---------- */
+  --messenger: #0084ff;
+  --zalo: #0068ff;
+  --phone: #4cb050;
+  --facebook: #3b5998;
+  --google: #e24a32;
+  --instagram: #3f729b;
+  --youtube: #e62117;
+
+  /* ---------- Font ---------- */
+  --font-base: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+}

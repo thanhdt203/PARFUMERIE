@@ -9,13 +9,12 @@ const nhanVienSchema = new mongoose.Schema({
     TenDangNhap: {
         type: String,
         required: true,
+        unique: true,
         maxlength: 50
     },
     MatKhau: {
         type: String,
-        required: true,
-        unique: true,
-        maxlength: 50
+        required: true
     },
     SoDienThoai: {
         type: String,
@@ -27,6 +26,11 @@ const nhanVienSchema = new mongoose.Schema({
         type: String,
         required: true,
         maxlength: 12
+    },
+    VaiTro: {
+        type: String,
+        enum: ['staff', 'admin'],
+        default: 'staff'
     }
 }, {
     timestamps: true

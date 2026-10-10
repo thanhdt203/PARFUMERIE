@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
 
 const sessionSchema = new mongoose.Schema({
-    khachHangId: {
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'KhachHang',
         required: true, 
         index: true
     },
@@ -15,6 +14,11 @@ const sessionSchema = new mongoose.Schema({
     expiresAt: {
         type: Date,
         required: true,
+    },
+    role: {
+        type: String,
+        enum: ['customer', 'staff', 'admin'],
+        required: true
     },
 }, {
     timestamps: true,
