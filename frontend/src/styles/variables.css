@@ -48,3 +48,80 @@
   /* ---------- Font ---------- */
   --font-base: 'Roboto', 'Segoe UI', system-ui, sans-serif;
 }
+
+/* ==========================================================
+   Admin dashboard (light / dark)
+   Tailwind đọc các biến --adm-* này qua @theme trong index.css.
+   Chế độ tối bật bằng class "dark" trên <html> (chỉ khi đang ở /admin).
+   ========================================================== */
+:root {
+  /* nền và chữ */
+  --adm-page: #f3f6f4;
+  --adm-surface: var(--bg);
+  --adm-surface-muted: var(--bg-soft);
+  --adm-line: var(--line);
+  --adm-ink: var(--text-strong);
+  --adm-ink-muted: var(--text-muted);
+  --adm-ink-faint: var(--text-disabled);
+
+  /* màu nhấn (nút chính, mục đang chọn) */
+  --adm-accent: var(--green);
+  --adm-accent-hover: var(--green-hover);
+  --adm-accent-soft: var(--success-bg);
+  --adm-on-accent: var(--text-on-green);
+
+  /* sidebar luôn xanh đậm của Parfumerie */
+  --adm-side-bg: var(--green-deep);
+  --adm-side-ink: rgba(255, 255, 255, 0.72);
+  --adm-side-ink-strong: var(--text-on-green);
+  --adm-side-hover: rgba(255, 255, 255, 0.07);
+  --adm-side-active: rgba(126, 240, 204, 0.14);
+  --adm-side-line: rgba(255, 255, 255, 0.1);
+
+  /* trạng thái */
+  --adm-success: #1b7a4e;
+  --adm-success-soft: var(--success-bg);
+  --adm-warning: #94600a;
+  --adm-warning-soft: #fdf3dc;
+  --adm-info: #1c5da6;
+  --adm-info-soft: #e8f1fb;
+  --adm-danger: var(--error-dark);
+  --adm-danger-soft: var(--error-bg);
+
+  /* lớp phủ, bóng */
+  --adm-scrim: rgba(7, 19, 14, 0.5);
+  --adm-shadow: 0 1px 2px rgba(10, 47, 34, 0.06), 0 4px 16px rgba(10, 47, 34, 0.05);
+  --adm-shadow-pop: 0 12px 32px rgba(10, 47, 34, 0.18);
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --adm-page: #0b1310;
+  --adm-surface: #121c17;
+  --adm-surface-muted: #17241e;
+  --adm-line: #24342d;
+  --adm-ink: #e9f1ed;
+  --adm-ink-muted: #a1b3aa;
+  --adm-ink-faint: #72857c;
+
+  --adm-accent: var(--mint);
+  --adm-accent-hover: #a6f5dd;
+  --adm-accent-soft: rgba(126, 240, 204, 0.12);
+  --adm-on-accent: #06231a;
+
+  --adm-side-bg: #070f0b;
+
+  --adm-success: #5fd49b;
+  --adm-success-soft: rgba(95, 212, 155, 0.14);
+  --adm-warning: #f0b85a;
+  --adm-warning-soft: rgba(240, 184, 90, 0.14);
+  --adm-info: #7db8f5;
+  --adm-info-soft: rgba(125, 184, 245, 0.14);
+  --adm-danger: #ff8f85;
+  --adm-danger-soft: rgba(255, 143, 133, 0.14);
+
+  --adm-scrim: rgba(0, 0, 0, 0.62);
+  --adm-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --adm-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.55);
+}

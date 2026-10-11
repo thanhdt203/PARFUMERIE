@@ -1,0 +1,80 @@
+/* ==========================================================
+   Reset nhẹ chỉ áp dụng trong khu vực .admin-root.
+   Không dùng preflight của Tailwind để không làm vỡ giao diện khách.
+   Được import vào layer "base" nên các class tiện ích của Tailwind luôn thắng.
+   ========================================================== */
+.admin-root,
+.admin-root *,
+.admin-root *::before,
+.admin-root *::after {
+  border-color: var(--adm-line);
+  border-style: solid;
+  border-width: 0;
+}
+
+.admin-root h1,
+.admin-root h2,
+.admin-root h3,
+.admin-root h4,
+.admin-root p,
+.admin-root ul,
+.admin-root ol {
+  margin: 0;
+  padding: 0;
+}
+
+.admin-root h1,
+.admin-root h2,
+.admin-root h3,
+.admin-root h4 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.admin-root ul,
+.admin-root ol {
+  list-style: none;
+}
+
+.admin-root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-root button,
+.admin-root input,
+.admin-root select,
+.admin-root textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+.admin-root button {
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.admin-root button:disabled {
+  cursor: not-allowed;
+}
+
+.admin-root :focus-visible {
+  outline: 2px solid var(--adm-accent);
+  outline-offset: 2px;
+}
+
+.admin-root aside :focus-visible {
+  outline-color: var(--mint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-root *,
+  .admin-root *::before,
+  .admin-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

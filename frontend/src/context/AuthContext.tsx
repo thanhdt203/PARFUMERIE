@@ -6,7 +6,7 @@ export type Role = 'customer' | 'staff' | 'admin';
 
 export const ROLE_HOME: Record<Role, string> = {
   customer: '/',
-  staff: '/staff',
+  staff: '/admin',
   admin: '/admin',
 };
 

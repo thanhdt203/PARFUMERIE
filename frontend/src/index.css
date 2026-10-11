@@ -1,28 +1,113 @@
+/* Thứ tự layer: Tailwind (theme, utilities) nằm chung hệ với CSS cũ của site */
+@layer theme, base, components, utilities;
+
 @import './styles/variables.css';
+/* Chỉ nạp theme + utilities, bỏ preflight để không ảnh hưởng trang khách */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+@import './styles/admin-base.css' layer(base);
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* Chế độ tối: bật bằng class "dark" trên <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Bỏ toàn bộ bảng màu mặc định, chỉ dùng màu lấy từ variables.css */
+@theme {
+  --color-*: initial;
 }
 
-html,
-body {
-  margin: 0;
+/* "inline" để class Tailwind đọc thẳng var(--adm-*) nên đổi light/dark là tự đổi màu */
+@theme inline {
+  --font-sans: var(--font-base);
+
+  --color-page: var(--adm-page);
+  --color-surface: var(--adm-surface);
+  --color-surface-muted: var(--adm-surface-muted);
+  --color-line: var(--adm-line);
+  --color-ink: var(--adm-ink);
+  --color-ink-muted: var(--adm-ink-muted);
+  --color-ink-faint: var(--adm-ink-faint);
+
+  --color-accent: var(--adm-accent);
+  --color-accent-hover: var(--adm-accent-hover);
+  --color-accent-soft: var(--adm-accent-soft);
+  --color-on-accent: var(--adm-on-accent);
+  --color-mint: var(--mint);
+
+  --color-side: var(--adm-side-bg);
+  --color-side-ink: var(--adm-side-ink);
+  --color-side-ink-strong: var(--adm-side-ink-strong);
+  --color-side-hover: var(--adm-side-hover);
+  --color-side-active: var(--adm-side-active);
+  --color-side-line: var(--adm-side-line);
+
+  --color-success: var(--adm-success);
+  --color-success-soft: var(--adm-success-soft);
+  --color-warning: var(--adm-warning);
+  --color-warning-soft: var(--adm-warning-soft);
+  --color-info: var(--adm-info);
+  --color-info-soft: var(--adm-info-soft);
+  --color-danger: var(--adm-danger);
+  --color-danger-soft: var(--adm-danger-soft);
+  --color-scrim: var(--adm-scrim);
+
+  --shadow-card: var(--adm-shadow);
+  --shadow-pop: var(--adm-shadow-pop);
 }
 
-body {
-  font-family: var(--font-base);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+@theme {
+  --radius-control: 10px;
+  --radius-card: 14px;
+
+  --animate-fade-in: fade-in 0.18s ease-out;
+  --animate-pop-in: pop-in 0.16s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
 }
 
-#root {
-  min-height: 100svh;
-}
+/* ---------- CSS gốc của site (giữ nguyên, chỉ đưa vào layer base) ---------- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-button,
-input {
-  font: inherit;
+  html,
+  body {
+    margin: 0;
+  }
+
+  body {
+    font-family: var(--font-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  #root {
+    min-height: 100svh;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
 }

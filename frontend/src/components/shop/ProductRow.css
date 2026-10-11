@@ -1,0 +1,81 @@
+.prow {
+  margin-bottom: 36px;
+}
+
+.prow__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.prow__title {
+  margin: 0;
+  color: var(--text-title);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.prow__more {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-strong);
+  font-size: 14px;
+  text-decoration: none;
+}
+.prow__more:hover {
+  color: var(--green);
+}
+
+/* Hàng cuộn ngang: không hiện thanh cuộn, kéo chuột hoặc vuốt tay để xem */
+.prow__scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 2px 12px; /* chừa chỗ cho bóng khi rê chuột */
+  cursor: grab;
+  scrollbar-width: none; /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
+.prow__scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+.prow__scroll--dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* Chỉ màn cảm ứng mới bắt dính từng ô (kéo bằng chuột thì cuộn tự do) */
+@media (pointer: coarse) {
+  .prow__scroll {
+    scroll-snap-type: x proximity;
+  }
+}
+
+.pgrid-msg {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+.pgrid-msg--error {
+  color: var(--error-dark);
+}
+.pgrid-msg button {
+  margin-left: 8px;
+  padding: 6px 14px;
+  border: 1px solid var(--green);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--green);
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .prow__title {
+    font-size: 20px;
+  }
+  .prow__scroll {
+    gap: 10px;
+  }
+}

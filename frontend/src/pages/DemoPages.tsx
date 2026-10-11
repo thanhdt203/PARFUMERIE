@@ -8,28 +8,22 @@ function LogoutButton() {
 
 export function HomePage() {
   const { role } = useAuth();
+  const canManage = role === 'staff' || role === 'admin';
   return (
     <div style={{ padding: 24 }}>
       <h2>Giao diện KHÁCH (trang chủ)</h2>
-      {role ? <LogoutButton /> : <Link to="/login">Đăng nhập</Link>}
-    </div>
-  );
-}
-
-export function StaffPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h2>Giao diện NHÂN VIÊN</h2>
-      <LogoutButton />
-    </div>
-  );
-}
-
-export function AdminPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h2>Giao diện ADMIN</h2>
-      <LogoutButton />
+      {role ? (
+        <>
+          {canManage && (
+            <p>
+              <Link to="/admin">Vào trang quản trị</Link>
+            </p>
+          )}
+          <LogoutButton />
+        </>
+      ) : (
+        <Link to="/login">Đăng nhập</Link>
+      )}
     </div>
   );
 }
