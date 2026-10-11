@@ -22,4 +22,6 @@ const apiService: DashboardService = {
   },
 };
 
-export const dashboardService: DashboardService = USE_MOCK ? mockService : apiService;
+//export const dashboardService: DashboardService = USE_MOCK ? mockService : apiService;
+// Mock data
+export const dashboardService: DashboardService = mockService;

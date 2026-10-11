@@ -5,6 +5,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { HomePage } from './pages/HomePage';
+import { CartPage, WishlistPage } from './pages/CustomerPages';
 import ComingSoonPage from './pages/admin/ComingSoonPage';
 
 // Tách Dashboard (kéo theo Recharts) thành chunk riêng để trang khách tải nhẹ
@@ -21,6 +22,8 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/gio-hang" element={<CartPage />} />
+      <Route path="/yeu-thich" element={<WishlistPage />} />
 
       {/* đường dẫn cũ của nhân viên -> chuyển sang khu quản trị chung */}
       <Route path="/staff" element={<Navigate to="/admin" replace />} />

@@ -1,8 +1,3 @@
-/* ==========================================================
-   Reset nhẹ chỉ áp dụng trong khu vực .admin-root.
-   Không dùng preflight của Tailwind để không làm vỡ giao diện khách.
-   Được import vào layer "base" nên các class tiện ích của Tailwind luôn thắng.
-   ========================================================== */
 .admin-root,
 .admin-root *,
 .admin-root *::before,
@@ -66,7 +61,7 @@
 }
 
 .admin-root aside :focus-visible {
-  outline-color: var(--mint);
+  outline-color: var(--adm-highlight);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -77,4 +72,8 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+.admin-root aside nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }

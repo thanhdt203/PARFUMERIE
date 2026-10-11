@@ -53,64 +53,70 @@
    Admin dashboard (light / dark)
    Tailwind đọc các biến --adm-* này qua @theme trong index.css.
    Chế độ tối bật bằng class "dark" trên <html> (chỉ khi đang ở /admin).
+   Bảng màu "Chàm": nền xám lạnh, màu nhấn indigo, sidebar xanh navy.
+   Chỉ ảnh hưởng khu admin, trang khách vẫn dùng màu thương hiệu ở trên.
+   Muốn đổi màu admin: chỉ sửa các giá trị trong hai khối dưới đây.
    ========================================================== */
 :root {
   /* nền và chữ */
-  --adm-page: #f3f6f4;
-  --adm-surface: var(--bg);
-  --adm-surface-muted: var(--bg-soft);
-  --adm-line: var(--line);
-  --adm-ink: var(--text-strong);
-  --adm-ink-muted: var(--text-muted);
-  --adm-ink-faint: var(--text-disabled);
+  --adm-page: #f5f6fa;
+  --adm-surface: #ffffff;
+  --adm-surface-muted: #f9fafc;
+  --adm-line: #e3e6ef;
+  --adm-ink: #151a2c;
+  --adm-ink-muted: #555d75;
+  --adm-ink-faint: #7a8197;
 
-  /* màu nhấn (nút chính, mục đang chọn) */
-  --adm-accent: var(--green);
-  --adm-accent-hover: var(--green-hover);
-  --adm-accent-soft: var(--success-bg);
-  --adm-on-accent: var(--text-on-green);
+  /* màu nhấn (nút chính, mục đang chọn, cột biểu đồ) */
+  --adm-accent: #4f46e5;
+  --adm-accent-hover: #4338ca;
+  --adm-accent-soft: #ecebfd;
+  --adm-on-accent: #ffffff;
 
-  /* sidebar luôn xanh đậm của Parfumerie */
-  --adm-side-bg: var(--green-deep);
-  --adm-side-ink: rgba(255, 255, 255, 0.72);
-  --adm-side-ink-strong: var(--text-on-green);
+  /* sidebar */
+  --adm-side-bg: #121630;
+  --adm-side-ink: rgba(255, 255, 255, 0.74);
+  --adm-side-ink-strong: #ffffff;
   --adm-side-hover: rgba(255, 255, 255, 0.07);
-  --adm-side-active: rgba(126, 240, 204, 0.14);
+  --adm-side-active: rgba(165, 180, 252, 0.16);
   --adm-side-line: rgba(255, 255, 255, 0.1);
+  /* điểm nhấn trên sidebar: logo, mục đang chọn, viền focus */
+  --adm-highlight: #a5b4fc;
 
   /* trạng thái */
-  --adm-success: #1b7a4e;
-  --adm-success-soft: var(--success-bg);
-  --adm-warning: #94600a;
-  --adm-warning-soft: #fdf3dc;
-  --adm-info: #1c5da6;
-  --adm-info-soft: #e8f1fb;
-  --adm-danger: var(--error-dark);
-  --adm-danger-soft: var(--error-bg);
+  --adm-success: #16774d;
+  --adm-success-soft: #e3f4ec;
+  --adm-warning: #8f5a08;
+  --adm-warning-soft: #fcf1d8;
+  --adm-info: #1d5fa8;
+  --adm-info-soft: #e6f0fb;
+  --adm-danger: #b3261e;
+  --adm-danger-soft: #fdecea;
 
   /* lớp phủ, bóng */
-  --adm-scrim: rgba(7, 19, 14, 0.5);
-  --adm-shadow: 0 1px 2px rgba(10, 47, 34, 0.06), 0 4px 16px rgba(10, 47, 34, 0.05);
-  --adm-shadow-pop: 0 12px 32px rgba(10, 47, 34, 0.18);
+  --adm-scrim: rgba(10, 12, 28, 0.5);
+  --adm-shadow: 0 1px 2px rgba(21, 26, 44, 0.05), 0 6px 20px rgba(21, 26, 44, 0.06);
+  --adm-shadow-pop: 0 14px 36px rgba(18, 22, 48, 0.22);
 }
 
 :root.dark {
   color-scheme: dark;
 
-  --adm-page: #0b1310;
-  --adm-surface: #121c17;
-  --adm-surface-muted: #17241e;
-  --adm-line: #24342d;
-  --adm-ink: #e9f1ed;
-  --adm-ink-muted: #a1b3aa;
-  --adm-ink-faint: #72857c;
+  --adm-page: #0b0e1a;
+  --adm-surface: #12162a;
+  --adm-surface-muted: #181d34;
+  --adm-line: #272d4a;
+  --adm-ink: #e8eaf6;
+  --adm-ink-muted: #a6acc8;
+  --adm-ink-faint: #7a81a0;
 
-  --adm-accent: var(--mint);
-  --adm-accent-hover: #a6f5dd;
-  --adm-accent-soft: rgba(126, 240, 204, 0.12);
-  --adm-on-accent: #06231a;
+  --adm-accent: #8e96ff;
+  --adm-accent-hover: #aab0ff;
+  --adm-accent-soft: rgba(142, 150, 255, 0.14);
+  --adm-on-accent: #0a0d28;
 
-  --adm-side-bg: #070f0b;
+  --adm-side-bg: #080a15;
+  --adm-highlight: #a5b4fc;
 
   --adm-success: #5fd49b;
   --adm-success-soft: rgba(95, 212, 155, 0.14);

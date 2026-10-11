@@ -9,6 +9,7 @@ const DEFAULT_LIMIT = 12;
 
 const SORT_MAP = {
     moi: { createdAt: -1 },
+    pho_bien: { LuotXem: -1 },
     gia_tang: { GiaThapNhat: 1 },
     gia_giam: { GiaThapNhat: -1 },
     ten: { TenKhongDau: 1 },
@@ -42,11 +43,6 @@ const parseNonNegativeNumber = (value) => {
     return Number(value);
 };
 
-// Đọc các tham số lọc từ query string.
-// Trả về { error } nếu sai, hoặc { spFilter, bienTheFilter }:
-//  - spFilter: điều kiện lọc trên SanPham
-//  - bienTheFilter: điều kiện lọc trên SanPhamDungTich (dung tích, giá, còn hàng)
-//    gộp chung 1 điều kiện để "50ml dưới 3 triệu" khớp trên CÙNG một biến thể
 export const parseFilterQuery = (query) => {
     const spFilter = { DaAn: false };
     const bienTheFilter = {};
@@ -57,6 +53,14 @@ export const parseFilterQuery = (query) => {
             return { error: "thuonghieu chứa mã không hợp lệ" };
         }
         spFilter.MaTH = { $in: thuongHieu };
+    }
+
+    const danhMuc = parseList(query.danhmuc);
+    if (danhMuc.length) {
+        if (!danhMuc.every(isObjectId)) {
+            return { error: "danhmuc chứa mã không hợp lệ" };
+        }
+        spFilter.MaDM = { $in: danhMuc };
     }
 
     const gioiTinh = parseList(query.gioitinh).map((s) => s.toLowerCase());
@@ -291,6 +295,10 @@ export const getProductById = async (req, res) => {
             return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
         }
 
+        SanPham.updateOne({ _id: id }, { $inc: { LuotXem: 1 } }, { timestamps: false }).catch((err) =>
+            console.error("Không cập nhật được LuotXem", err)
+        );
+
         const [bienThes, hinhAnhs] = await Promise.all([
             SanPhamDungTich.find({ MaSP: id })
                 .populate("MaDungTich", "TenDungTich")
@@ -311,6 +319,7 @@ export const getProductById = async (req, res) => {
                 NotHuong: sp.NotHuong,
                 GiaThapNhat: sp.GiaThapNhat,
                 GiaCaoNhat: sp.GiaCaoNhat,
+                LuotXem: (sp.LuotXem ?? 0) + 1,
                 ThuongHieu: sp.MaTH,
                 DanhMuc: sp.MaDM,
                 BienThe: bienThes.map((b) => ({

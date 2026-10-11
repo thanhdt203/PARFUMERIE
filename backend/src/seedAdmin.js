@@ -16,7 +16,7 @@ const run = async () => {
     await NhanVien.create({
       HoTenNV: "Quản trị viên",
       TenDangNhap: "admin",
-      MatKhau: await bcrypt.hash("thanhdt", 10),
+      MatKhau: await bcrypt.hash("admin", 10),
       SoDienThoai: "0900000000",
       SoCCCD: "000000000000",
       VaiTro: "admin",

@@ -124,7 +124,7 @@ export default function ProductRow({ title, to, products, autoScrollMs = AUTO_SC
         onDragStart={(e) => e.preventDefault()} // không cho kéo nhầm ảnh / chữ
       >
         {products
-          ? products.map((p) => <ProductCard key={p._id} product={p} />)
+          ? products.map((p, i) => <ProductCard key={p._id} product={p} index={i} />)
           : Array.from({ length: 6 }, (_, i) => <div key={i} className="pcard pcard--skeleton" />)}
       </div>
     </section>

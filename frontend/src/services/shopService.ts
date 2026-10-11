@@ -40,18 +40,35 @@ const mockService: ShopService = {
   },
 };
 
-// Endpoint công khai dự kiến (backend chưa có): GET /products?sort=...&limit=...
-// trả về { data: ProductCardData[] }. Chỉnh đường dẫn / tham số tại đây nếu backend đặt khác.
-async function fetchProducts(sort: 'search' | 'newest'): Promise<ProductCardData[]> {
-  const { data } = await api.get<{ data: ProductCardData[] }>('/products', {
-    params: { sort, limit: SO_SP_MOI_MUC },
+// Dạng một sản phẩm trong GET /api/products (chỉ khai báo phần cần dùng)
+interface ApiProduct {
+  _id: string;
+  TenSP: string;
+  GiaThapNhat: number;
+  GiaCaoNhat: number;
+  AnhChinh: string | null;
+  ThuongHieu?: { _id: string; TenTH: string } | null;
+}
+
+const TOP_SORT = 'ten';
+
+async function fetchProducts(sort: string): Promise<ProductCardData[]> {
+  const { data } = await api.get<{ data: ApiProduct[] }>('/products', {
+    params: { sort, limit: SO_SP_MOI_MUC, conhang: true },
   });
-  return data.data;
+  return data.data.map((sp) => ({
+    _id: sp._id,
+    TenSP: sp.TenSP,
+    TenThuongHieu: sp.ThuongHieu?.TenTH ?? '',
+    GiaThapNhat: sp.GiaThapNhat,
+    GiaCaoNhat: sp.GiaCaoNhat,
+    AnhChinh: sp.AnhChinh,
+  }));
 }
 
 const apiService: ShopService = {
   async getSections() {
-    const [top, moi] = await Promise.all([fetchProducts('search'), fetchProducts('newest')]);
+    const [top, moi] = await Promise.all([fetchProducts(TOP_SORT), fetchProducts('moi')]);
     return [
       { key: 'top-tim-kiem', title: 'Top tìm kiếm', to: '/nuoc-hoa', products: top },
       { key: 'san-pham-moi', title: 'Sản phẩm mới', to: '/nuoc-hoa', products: moi },

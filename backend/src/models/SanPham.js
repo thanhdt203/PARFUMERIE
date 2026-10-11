@@ -65,7 +65,6 @@ const sanPhamSchema = new mongoose.Schema({
         Giua: notHuongField,
         Cuoi: notHuongField
     },
-    // khoảng giá tính từ các biến thể dung tích (tự cập nhật, xem SanPhamDungTich.js)
     GiaThapNhat: {
         type: Number,
         default: 0,
@@ -76,10 +75,14 @@ const sanPhamSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
-    // true = ẩn khỏi phía khách hàng
     DaAn: {
         type: Boolean,
         default: false
+    },
+    LuotXem: {
+        type: Number,
+        default: 0,
+        min: 0,
     },
     MaDM: {
         type: mongoose.Schema.Types.ObjectId,

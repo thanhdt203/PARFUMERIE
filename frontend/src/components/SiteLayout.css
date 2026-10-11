@@ -15,30 +15,231 @@
 }
 
 .site__header {
+  position: relative;
+  z-index: 30;
   background: var(--bg);
 }
-.site__nav {
-  max-width: 1100px;
+.site__header-inner {
+  position: relative;
+  --site-actions-w: 124px; /* bề rộng cụm 3 icon (3 nút 40px + 2 khoảng cách) */
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 14px 16px;
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.site__nav {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px 36px;
+  gap: 6px 28px;
 }
+
+/* ---------- Link menu chính: gạch chân chạy ra từ giữa + mũi tên chỉ báo ---------- */
 .site__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
   color: var(--text-strong);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   text-decoration: none;
 }
+.site__link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--green);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
 .site__link:hover {
   color: var(--green);
 }
+.site__link:hover::after,
+.site__link.is-open::after {
+  transform: scaleX(1);
+}
 .site__caret {
-  margin-left: 5px;
-  font-weight: 400;
+  flex: none;
+  opacity: 0.55;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+.site__link:hover .site__caret,
+.site__link.is-open .site__caret {
+  opacity: 1;
+}
+.site__link.is-open .site__caret {
+  transform: rotate(180deg);
+}
+
+/* ---------- Cụm icon: tài khoản, giỏ hàng, yêu thích ---------- */
+.site__actions {
+  flex: none;
+  width: var(--site-actions-w);
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.site__icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-strong);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.site__icon-btn:hover {
+  background: var(--bg-soft);
+  color: var(--green);
+}
+.site__icon-btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.site__badge {
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--green);
+  color: var(--text-on-green);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.site__avatar {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--text-on-green);
+  font-size: 12px;
+  font-weight: 700;
+}
+.site__account {
+  position: relative;
+}
+.site__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.site__menu-name {
+  margin: 0 0 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-strong);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site__menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.site__menu-item:hover {
+  background: var(--bg-soft);
+  color: var(--green);
+}
+.site__menu-item:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.site__menu-item:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.site__menu-item--danger {
+  color: var(--error-dark);
+}
+.site__menu-item--danger:hover {
+  color: var(--error-dark);
+  background: var(--error-bg);
+}
+
+/* ---------- Trang giỏ hàng / yêu thích khi còn trống ---------- */
+.site__empty {
+  padding: 56px 16px;
+  text-align: center;
+}
+.site__empty-icon {
+  color: var(--text-placeholder);
+}
+.site__empty h1 {
+  margin: 14px 0 6px;
+  color: var(--text-title);
+  font-size: 20px;
+  font-weight: 500;
+}
+.site__empty p {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+}
+.site__empty-link {
+  display: inline-block;
+  padding: 11px 24px;
+  border-radius: 3px;
+  background: var(--green);
+  color: var(--text-on-green);
+  font-weight: 500;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.site__empty-link:hover {
+  background: var(--green-hover);
+}
+.site__empty-link:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
 }
 
 .site__crumbs {
@@ -119,11 +320,238 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 640px) {
+/* màn hình rất rộng: thêm khoảng trống bên trái bằng cụm icon để menu nằm đúng giữa */
+@media (min-width: 1320px) {
+  .site__header-inner::before {
+    content: '';
+    flex: none;
+    width: var(--site-actions-w);
+  }
   .site__nav {
+    gap: 6px 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  .site__header-inner {
+    flex-wrap: wrap;
+    padding: 4px 8px;
+  }
+  .site__actions {
+    order: -1;
+    width: 100%;
+  }
+  .site__nav {
+    flex: 1 1 100%;
+    padding: 4px 0 10px;
     gap: 6px 20px;
   }
   .contact {
     bottom: 12%;
+  }
+}
+
+/* ---------- Bảng thương hiệu: thẻ nổi ở giữa, không trải full màn hình ---------- */
+.site__nav-item {
+  display: inline-flex;
+}
+.site__mega {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 20;
+  width: min(880px, calc(100vw - 32px));
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  transform: translateX(-50%);
+  animation: site-pop-center 0.16s ease-out;
+}
+/* vùng đệm vô hình: chuột đi từ menu xuống bảng không bị mất hover */
+.site__mega::before,
+.site__drop::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
+}
+.site__mega-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--line);
+  border-radius: 12px 12px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.site__mega-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+}
+.site__mega-all:hover {
+  text-decoration: underline;
+}
+.site__mega-body {
+  max-height: min(56vh, 440px);
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  border-radius: 0 0 12px 12px;
+  scrollbar-width: thin;
+}
+.site__mega-cols {
+  column-width: 190px; /* tự chia 4 cột, màn hình hẹp tự giảm còn ít cột hơn */
+  column-gap: 28px;
+}
+.site__mega-group {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+.site__mega-letter {
+  margin: 0 0 4px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--green);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.site__mega-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.site__mega-link {
+  display: block;
+  padding: 3px 0;
+  color: var(--text);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    color 0.15s,
+    padding-left 0.15s;
+}
+.site__mega-link:hover {
+  padding-left: 4px;
+  color: var(--green);
+}
+.site__mega-link:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.site__mega-msg {
+  margin: 0;
+  color: var(--text-muted);
+}
+.site__mega-retry {
+  border: 0;
+  background: none;
+  color: var(--green);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- Danh sách nhỏ thả xuống: Nước hoa, Nước hoa chiết ---------- */
+.site__nav-item--list {
+  position: relative; /* bảng bám ngay dưới chữ, khác bảng thương hiệu căn giữa header */
+}
+.site__drop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  min-width: 210px;
+  padding: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  animation: site-pop 0.16s ease-out;
+}
+.site__drop-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.site__drop-link {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.site__drop-link:hover {
+  background: var(--bg-soft);
+  color: var(--green);
+}
+.site__drop-link:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.site__drop-msg {
+  margin: 0;
+  padding: 9px 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@keyframes site-pop-center {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes site-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site__mega,
+  .site__drop {
+    animation: none;
+  }
+  .site__link::after,
+  .site__caret {
+    transition: none;
   }
 }

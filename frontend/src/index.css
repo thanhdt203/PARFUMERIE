@@ -1,21 +1,16 @@
-/* Thứ tự layer: Tailwind (theme, utilities) nằm chung hệ với CSS cũ của site */
 @layer theme, base, components, utilities;
 
 @import './styles/variables.css';
-/* Chỉ nạp theme + utilities, bỏ preflight để không ảnh hưởng trang khách */
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 @import './styles/admin-base.css' layer(base);
 
-/* Chế độ tối: bật bằng class "dark" trên <html> */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Bỏ toàn bộ bảng màu mặc định, chỉ dùng màu lấy từ variables.css */
 @theme {
   --color-*: initial;
 }
 
-/* "inline" để class Tailwind đọc thẳng var(--adm-*) nên đổi light/dark là tự đổi màu */
 @theme inline {
   --font-sans: var(--font-base);
 
@@ -31,7 +26,7 @@
   --color-accent-hover: var(--adm-accent-hover);
   --color-accent-soft: var(--adm-accent-soft);
   --color-on-accent: var(--adm-on-accent);
-  --color-mint: var(--mint);
+  --color-mint: var(--adm-highlight); /* tên cũ "mint", nay là điểm nhấn sidebar theo bảng màu admin */
 
   --color-side: var(--adm-side-bg);
   --color-side-ink: var(--adm-side-ink);
@@ -82,7 +77,6 @@
   }
 }
 
-/* ---------- CSS gốc của site (giữ nguyên, chỉ đưa vào layer base) ---------- */
 @layer base {
   *,
   *::before,
