@@ -5,6 +5,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { HomePage } from './pages/HomePage';
+import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage, WishlistPage } from './pages/CustomerPages';
 import ComingSoonPage from './pages/admin/ComingSoonPage';
 
@@ -20,6 +21,7 @@ function App() {
     <Routes>
       {/* ai cũng vào được (kể cả chưa đăng nhập) */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/nuoc-hoa/:id" element={<ProductDetailPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/gio-hang" element={<CartPage />} />

@@ -255,10 +255,12 @@ function SiteNav() {
 
 interface SiteLayoutProps {
   crumb: string; // tên trang hiện tại trong breadcrumb
+  /** Các cấp trung gian giữa "Trang chủ" và trang hiện tại */
+  trail?: { label: string; to: string }[];
   children: ReactNode;
 }
 
-export default function SiteLayout({ crumb, children }: SiteLayoutProps) {
+export default function SiteLayout({ crumb, trail, children }: SiteLayoutProps) {
   return (
     <div className="site">
       <div className="site__topbar" />
@@ -274,6 +276,12 @@ export default function SiteLayout({ crumb, children }: SiteLayoutProps) {
         <nav className="site__crumbs-inner" aria-label="Breadcrumb">
           <Link to="/">Trang chủ</Link>
           <span aria-hidden="true"> › </span>
+          {trail?.map((t) => (
+            <span key={t.to}>
+              <Link to={t.to}>{t.label}</Link>
+              <span aria-hidden="true"> › </span>
+            </span>
+          ))}
           <span className="site__crumb-current" aria-current="page">
             {crumb}
           </span>

@@ -2,12 +2,19 @@ import api from '../lib/api';
 import { SAN_PHAM } from '../data/sanPham';
 import { SAN_PHAM_DUNG_TICH } from '../data/sanPhamDungTich';
 import { THUONG_HIEU } from '../data/thuongHieu';
-import type { ProductCardData, ProductSection } from '../types/shop';
+import { DANH_MUC } from '../data/danhMuc';
+import { DUNG_TICH } from '../data/dungTich';
+import type { ProductCardData, ProductDetailData, ProductSection } from '../types/shop';
 import { mockDelay, USE_MOCK } from './config';
 
 export interface ShopService {
   getSections(): Promise<ProductSection[]>;
+  getProduct(id: string): Promise<ProductDetailData>;
+  /** Sản phẩm cùng danh mục (bỏ chính nó) */
+  getRelated(product: ProductDetailData): Promise<ProductCardData[]>;
 }
+
+const SO_SP_LIEN_QUAN = 4;
 
 const SO_SP_MOI_MUC = 10;
 
@@ -28,6 +35,43 @@ function getAllMockProducts(): ProductCardData[] {
 }
 
 const mockService: ShopService = {
+  async getProduct(id) {
+    await mockDelay();
+    const sp = SAN_PHAM.find((x) => x._id === id && !x.DaAn);
+    if (!sp) throw new Error('Không tìm thấy sản phẩm');
+    const th = THUONG_HIEU.find((t) => t._id === sp.MaTH);
+    const dm = DANH_MUC.find((d) => d._id === sp.MaDM);
+    const tenDT = new Map(DUNG_TICH.map((d) => [d._id, d.TenDungTich]));
+    return {
+      _id: sp._id,
+      TenSP: sp.TenSP,
+      MoTa: sp.MoTa,
+      ThongTinChiTiet: sp.ThongTinChiTiet,
+      XuatXu: sp.XuatXu,
+      GioiTinh: sp.GioiTinh,
+      NhomHuong: sp.NhomHuong,
+      NotHuong: sp.NotHuong,
+      ThuongHieu: th ? { _id: th._id, TenTH: th.TenTH } : null,
+      DanhMuc: dm ? { _id: dm._id, TenDM: dm.TenDM } : null,
+      BienThe: SAN_PHAM_DUNG_TICH.filter((b) => b.MaSP === id)
+        .sort((a, b) => a.Gia - b.Gia)
+        .map((b) => ({
+          _id: b._id,
+          TenDungTich: tenDT.get(b.MaDungTich) ?? '',
+          Gia: b.Gia,
+          SoLuongCo: b.SoLuongCo,
+          ConHang: b.SoLuongCo > 0,
+        })),
+      HinhAnh: [],
+    };
+  },
+  async getRelated(product) {
+    await mockDelay();
+    const maDM = SAN_PHAM.find((x) => x._id === product._id)?.MaDM;
+    return getAllMockProducts()
+      .filter((p) => p._id !== product._id && SAN_PHAM.find((x) => x._id === p._id)?.MaDM === maDM)
+      .slice(0, SO_SP_LIEN_QUAN);
+  },
   async getSections() {
     await mockDelay();
     const all = getAllMockProducts();
@@ -66,7 +110,48 @@ async function fetchProducts(sort: string): Promise<ProductCardData[]> {
   }));
 }
 
+interface ApiProductDetail extends Omit<ProductDetailData, 'BienThe'> {
+  BienThe: Array<{
+    _id: string;
+    DungTich: { _id: string; TenDungTich: string } | null;
+    Gia: number;
+    SoLuongCo: number;
+    ConHang: boolean;
+  }>;
+}
+
 const apiService: ShopService = {
+  async getProduct(id) {
+    const { data } = await api.get<{ data: ApiProductDetail }>(`/products/${id}`);
+    const sp = data.data;
+    return {
+      ...sp,
+      BienThe: sp.BienThe.map((b) => ({
+        _id: b._id,
+        TenDungTich: b.DungTich?.TenDungTich ?? '',
+        Gia: b.Gia,
+        SoLuongCo: b.SoLuongCo,
+        ConHang: b.ConHang,
+      })),
+    };
+  },
+  async getRelated(product) {
+    if (!product.DanhMuc) return [];
+    const { data } = await api.get<{ data: ApiProduct[] }>('/products', {
+      params: { danhmuc: product.DanhMuc._id, limit: SO_SP_LIEN_QUAN + 1, conhang: true },
+    });
+    return data.data
+      .filter((sp) => sp._id !== product._id)
+      .slice(0, SO_SP_LIEN_QUAN)
+      .map((sp) => ({
+        _id: sp._id,
+        TenSP: sp.TenSP,
+        TenThuongHieu: sp.ThuongHieu?.TenTH ?? '',
+        GiaThapNhat: sp.GiaThapNhat,
+        GiaCaoNhat: sp.GiaCaoNhat,
+        AnhChinh: sp.AnhChinh,
+      }));
+  },
   async getSections() {
     const [top, moi] = await Promise.all([fetchProducts(TOP_SORT), fetchProducts('moi')]);
     return [

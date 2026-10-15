@@ -1,0 +1,414 @@
+/* Trang chi tiết sản phẩm. Chỉ dùng biến màu trong styles/variables.css */
+
+.pd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+/* ---------- Thư viện ảnh ---------- */
+.pd-gallery {
+  display: flex;
+  gap: 12px;
+  position: sticky;
+  top: 16px;
+}
+.pd-thumbs {
+  flex: none;
+  width: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pd-thumb {
+  width: 72px;
+  height: 72px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.pd-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.pd-thumb.is-active {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green);
+}
+.pd-stage {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+.pd-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.pd-stage .pcard__placeholder {
+  height: 70%;
+}
+
+/* ---------- Thông tin ---------- */
+.pd-info {
+  min-width: 0;
+}
+.pd-brand {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.pd-title {
+  margin: 0 0 8px;
+  color: var(--text-strong);
+  font-family: 'Playfair Display', 'Noto Serif', Georgia, serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.pd-meta {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.pd-price {
+  margin: 0 0 18px;
+  min-height: 1.3em;
+  color: var(--error-dark);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.pd-field {
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.pd-label {
+  padding: 0;
+  margin-bottom: 8px;
+  color: var(--text-title);
+  font-size: 14px;
+  font-weight: 700;
+}
+.pd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pd-chip {
+  padding: 8px 16px;
+  color: var(--text-title);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.pd-chip:hover:not(:disabled) {
+  border-color: var(--green);
+}
+.pd-chip.is-active {
+  color: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green);
+  font-weight: 700;
+}
+.pd-chip:disabled {
+  color: var(--text-disabled);
+  background: var(--bg-disabled);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+.pd-stock {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.pd-stock--out {
+  color: var(--error-dark);
+}
+
+/* ---------- Số lượng + nút ---------- */
+.pd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pd-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pd-qty button {
+  width: 42px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-strong);
+  background: var(--bg);
+  border: 0;
+  cursor: pointer;
+}
+.pd-qty button:hover:not(:disabled) {
+  background: var(--bg-soft);
+}
+.pd-qty button:disabled {
+  color: var(--text-placeholder);
+  cursor: not-allowed;
+}
+.pd-qty output {
+  min-width: 36px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.pd-btn {
+  height: 50px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.pd-btn--primary {
+  flex: 1 1 200px;
+  color: var(--text-on-green);
+  background: var(--green);
+  border: 1px solid var(--green);
+}
+.pd-btn--primary:hover:not(:disabled) {
+  background: var(--green-hover);
+}
+.pd-btn--primary:disabled {
+  background: var(--green-disabled);
+  border-color: var(--green-disabled);
+  cursor: not-allowed;
+}
+.pd-btn--ghost {
+  color: var(--text-strong);
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.pd-btn--ghost:hover,
+.pd-btn--ghost[aria-pressed='true'] {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.pd-notice {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  color: var(--green);
+  font-size: 13px;
+}
+.pd-notice a {
+  color: inherit;
+  font-weight: 700;
+}
+
+/* ---------- Tháp hương ---------- */
+.pd-pyramid {
+  margin: 12px 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.pd-pyramid__title {
+  margin: 0 0 12px;
+  color: var(--text-strong);
+  font-size: 15px;
+  font-weight: 700;
+}
+.pd-pyramid__tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+.pd-tier {
+  padding: 10px 12px;
+  background: var(--bg-soft);
+  border-radius: 6px;
+}
+.pd-tier__name {
+  margin: 0 0 4px;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+.pd-tier__notes {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.pd-desc {
+  margin-bottom: 14px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.pd-desc p {
+  margin: 0 0 8px;
+}
+.pd-desc__lead {
+  color: var(--text-strong);
+  font-weight: 500;
+}
+
+.pd-ai,
+.pd-link {
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+  background: none;
+  border: 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pd-ai:hover,
+.pd-link:hover {
+  color: var(--green-hover);
+}
+
+/* ---------- Phần dưới: đánh giá + sản phẩm tương tự ---------- */
+.pd-lower {
+  margin-top: 40px;
+  padding-top: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  border-top: 1px dashed var(--line);
+}
+.pd-block__title {
+  margin: 0 0 16px;
+  color: var(--text-strong);
+  font-size: 18px;
+  font-weight: 700;
+}
+.pd-empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+.pd-related {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.pd-related .pcard {
+  flex: none;
+}
+
+/* ---------- Loading / lỗi ---------- */
+.pd-state {
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--error-dark);
+  text-align: center;
+}
+.pd-skel {
+  background: var(--bg-soft);
+  border-radius: 8px;
+  animation: pd-pulse 1.2s ease-in-out infinite;
+}
+.pd-skel--img {
+  aspect-ratio: 1 / 1;
+}
+.pd-skel--title {
+  height: 36px;
+  margin: 12px 0;
+}
+.pd-skel--line {
+  height: 18px;
+  width: 50%;
+  margin: 12px 0;
+}
+@keyframes pd-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pd-chip:focus-visible,
+.pd-thumb:focus-visible,
+.pd-btn:focus-visible,
+.pd-qty button:focus-visible,
+.pd-ai:focus-visible,
+.pd-link:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+@media (max-width: 860px) {
+  .pd,
+  .pd-lower {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .pd-gallery {
+    position: static;
+  }
+  .pd-title {
+    font-size: 24px;
+  }
+}
+@media (max-width: 480px) {
+  .pd-gallery {
+    flex-direction: column-reverse;
+  }
+  .pd-thumbs {
+    width: auto;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .pd-thumb {
+    flex: none;
+  }
+  .pd-related {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-chip,
+  .pd-btn,
+  .pd-skel {
+    transition: none;
+    animation: none;
+  }
+}

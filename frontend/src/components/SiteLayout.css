@@ -21,13 +21,24 @@
 }
 .site__header-inner {
   position: relative;
-  --site-actions-w: 124px; /* bề rộng cụm 3 icon (3 nút 40px + 2 khoảng cách) */
+  --site-actions-w: 190px; /* bằng bề rộng logo để menu nằm đúng giữa */
   max-width: 1320px;
   margin: 0 auto;
   padding: 4px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.site__logo {
+  flex: none;
+  width: var(--site-actions-w);
+  display: flex;
+  align-items: center;
+}
+.site__logo img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .site__nav {
   flex: 1;
@@ -320,13 +331,8 @@
   outline-offset: 2px;
 }
 
-/* màn hình rất rộng: thêm khoảng trống bên trái bằng cụm icon để menu nằm đúng giữa */
+/* màn hình rất rộng: giãn menu */
 @media (min-width: 1320px) {
-  .site__header-inner::before {
-    content: '';
-    flex: none;
-    width: var(--site-actions-w);
-  }
   .site__nav {
     gap: 6px 36px;
   }
@@ -337,9 +343,16 @@
     flex-wrap: wrap;
     padding: 4px 8px;
   }
+  .site__logo {
+    order: -2;
+    flex: 1 1 0;
+    width: auto;
+    max-width: 160px;
+  }
   .site__actions {
     order: -1;
-    width: 100%;
+    width: auto;
+    margin-left: auto;
   }
   .site__nav {
     flex: 1 1 100%;

@@ -1,12 +1,13 @@
 import { Heart } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { CSSProperties } from 'react';
 import { formatNumber } from '../../lib/format';
 import type { ProductCardData } from '../../types/shop';
 import './ProductCard.css';
 
 /** Hình chai mặc định khi sản phẩm chưa có ảnh (hoặc ảnh bị lỗi) */
-function BottlePlaceholder() {
+export function BottlePlaceholder() {
   return (
     <svg className="pcard__placeholder" viewBox="0 0 120 160" role="img" aria-label="Chưa có ảnh">
       <defs>
@@ -41,14 +42,20 @@ interface ProductCardProps {
   index?: number;
 }
 
-/** Ô hiển thị một loại nước hoa: ảnh, thương hiệu, tên, khoảng giá. Chỉ để xem, không có thao tác. */
+/** Ô hiển thị một loại nước hoa: ảnh, thương hiệu, tên, khoảng giá. Bấm vào để xem chi tiết. */
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { TenSP, TenThuongHieu, AnhChinh, GiaThapNhat, GiaCaoNhat } = product;
   const [imgFailed, setImgFailed] = useState(false);
   const showImage = Boolean(AnhChinh) && !imgFailed;
 
   return (
-    <article className="pcard" style={{ '--i': Math.min(index, 8) } as CSSProperties}>
+    <Link
+      to={`/nuoc-hoa/${product._id}`}
+      className="pcard"
+      style={{ '--i': Math.min(index, 8) } as CSSProperties}
+      aria-label={`${TenThuongHieu} ${TenSP}`}
+      draggable={false}
+    >
       <span className="pcard__heart" aria-hidden="true">
         <Heart size={19} strokeWidth={1.8} />
       </span>
@@ -75,6 +82,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           <span className="pcard__cur">₫</span>
         </p>
       </div>
-    </article>
+    </Link>
   );
 }

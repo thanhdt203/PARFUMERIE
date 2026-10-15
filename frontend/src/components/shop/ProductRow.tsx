@@ -25,7 +25,7 @@ interface ProductRowProps {
  */
 export default function ProductRow({ title, to, products, autoScrollMs = AUTO_SCROLL_MS }: ProductRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const drag = useRef({ active: false, startX: 0, startLeft: 0 });
+  const drag = useRef({ active: false, startX: 0, startLeft: 0, moved: false });
   const [dragging, setDragging] = useState(false);
 
   // trạng thái cho tự chạy (dùng ref để không làm render lại)
@@ -68,19 +68,24 @@ export default function ProductRow({ title, to, products, autoScrollMs = AUTO_SC
     lastInteract.current = Date.now();
   };
 
-  // Điện thoại tự vuốt được; riêng chuột thì tự xử lý kéo-để-cuộn
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     markInteract();
     const el = scrollRef.current;
     if (!el || e.pointerType !== 'mouse' || e.button !== 0) return;
-    drag.current = { active: true, startX: e.clientX, startLeft: el.scrollLeft };
-    el.setPointerCapture(e.pointerId);
-    setDragging(true);
+    // chưa bắt chuột ở đây: bấm thường phải để click tới được link của thẻ
+    drag.current = { active: true, startX: e.clientX, startLeft: el.scrollLeft, moved: false };
   };
 
   const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const el = scrollRef.current;
     if (!el || !drag.current.active) return;
+    if (!drag.current.moved) {
+      if (Math.abs(e.clientX - drag.current.startX) <= 5) return;
+      // bắt đầu kéo thật sự thì mới bắt chuột
+      drag.current.moved = true;
+      el.setPointerCapture(e.pointerId);
+      setDragging(true);
+    }
     el.scrollLeft = drag.current.startLeft - (e.clientX - drag.current.startX);
   };
 
@@ -121,6 +126,14 @@ export default function ProductRow({ title, to, products, autoScrollMs = AUTO_SC
         }}
         onTouchStart={markInteract}
         onWheel={markInteract}
+        // vừa kéo chuột xong thì không mở link của thẻ
+        onClickCapture={(e) => {
+          if (drag.current.moved) {
+            e.preventDefault();
+            e.stopPropagation();
+            drag.current.moved = false;
+          }
+        }}
         onDragStart={(e) => e.preventDefault()} // không cho kéo nhầm ảnh / chữ
       >
         {products

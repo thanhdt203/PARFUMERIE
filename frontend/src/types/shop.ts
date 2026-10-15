@@ -19,3 +19,31 @@ export interface ProductSection {
   to: string;
   products: ProductCardData[];
 }
+
+/** Một biến thể (dung tích) của sản phẩm ở trang chi tiết */
+export interface ProductVariantView {
+  /** MaSPDungTich: dùng cho giỏ hàng / đơn hàng */
+  _id: Id;
+  /** Ví dụ "50ml" */
+  TenDungTich: string;
+  Gia: number;
+  SoLuongCo: number;
+  ConHang: boolean;
+}
+
+/** Dữ liệu trang chi tiết sản phẩm (phía khách) */
+export interface ProductDetailData {
+  _id: Id;
+  TenSP: string;
+  MoTa: string;
+  ThongTinChiTiet: string;
+  XuatXu: string;
+  GioiTinh: 'nam' | 'nu' | 'unisex';
+  NhomHuong: string[];
+  NotHuong: { Dau: string[]; Giua: string[]; Cuoi: string[] };
+  ThuongHieu: { _id: Id; TenTH: string } | null;
+  DanhMuc: { _id: Id; TenDM: string } | null;
+  BienThe: ProductVariantView[];
+  /** Đã sắp: ảnh chính đứng đầu */
+  HinhAnh: Array<{ _id: Id; DuongDan: string }>;
+}
