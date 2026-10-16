@@ -2,12 +2,11 @@ import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, LayoutDashboard, LogOut, ShoppingCart, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCartStore } from '../store/cartStore';
 import { useDismiss } from '../hooks/useDismiss';
 import { getDisplayName, getInitials } from '../lib/user';
 
 interface SiteHeaderActionsProps {
-  /** Số sản phẩm trong giỏ, chưa có API nên mặc định 0 (ẩn badge) */
-  cartCount?: number;
   /** Số sản phẩm yêu thích, chưa có API nên mặc định 0 (ẩn badge) */
   wishlistCount?: number;
 }
@@ -96,7 +95,9 @@ function AccountButton() {
   );
 }
 
-export default function SiteHeaderActions({ cartCount = 0, wishlistCount = 0 }: SiteHeaderActionsProps) {
+export default function SiteHeaderActions({ wishlistCount = 0 }: SiteHeaderActionsProps) {
+  const cartCount = useCartStore((state) => state.tongSoLuong);
+
   return (
     <div className="site__actions">
       <AccountButton />

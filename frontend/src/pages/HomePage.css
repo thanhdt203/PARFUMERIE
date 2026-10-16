@@ -1,0 +1,16 @@
+/* bộ lọc bên trái + nội dung bên phải */
+.home {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+.home__main {
+  min-width: 0; /* để hàng cuộn ngang không làm vỡ cột */
+}
+@media (max-width: 800px) {
+  .home {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}

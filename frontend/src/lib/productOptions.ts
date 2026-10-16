@@ -47,3 +47,10 @@ export function splitList(text: string): string[] {
 export function isWholeNumber(text: string): boolean {
   return /^\d+$/.test(text.trim());
 }
+
+/** "10ml" -> "Chiết 10ml", "50ml" -> "Fullsize 50ml" (chai chiết từ 20ml trở xuống) */
+export function variantLabel(ten: string): string {
+  const ml = parseInt(ten, 10);
+  if (Number.isNaN(ml)) return ten;
+  return ml <= 20 ? `Chiết ${ten}` : `Fullsize ${ten}`;
+}

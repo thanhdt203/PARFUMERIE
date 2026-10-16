@@ -6,24 +6,20 @@ import ProductCard, { BottlePlaceholder } from '../components/shop/ProductCard';
 import { useAuth } from '../context/AuthContext';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { formatVnd } from '../lib/format';
-import { GIOI_TINH_LABEL, NHOM_HUONG_OPTIONS } from '../lib/productOptions';
+import { getErrorMessage } from '../lib/errors';
+import { GIOI_TINH_LABEL, NHOM_HUONG_OPTIONS, variantLabel } from '../lib/productOptions';
+import { useCartStore } from '../store/cartStore';
 import { shopService } from '../services/shopService';
 import type { ProductDetailData, ProductVariantView } from '../types/shop';
 import '../components/shop/ProductCard.css';
 import './ProductDetailPage.css';
 
 const MAX_QTY = 10;
+const LOGIN_REQUIRED = 'Vui lòng đăng nhập để sử dụng chức năng này.';
 
 const NHOM_HUONG_LABEL: Record<string, string> = Object.fromEntries(
   NHOM_HUONG_OPTIONS.map((o) => [o.value, o.label]),
 );
-
-// "10ml" -> "Chiết 10ml", "50ml" -> "Fullsize 50ml" (chai chiết từ 10ml trở xuống)
-function variantLabel(ten: string): string {
-  const ml = parseInt(ten, 10);
-  if (Number.isNaN(ml)) return ten;
-  return ml <= 20 ? `Chiết ${ten}` : `Fullsize ${ten}`;
-}
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -101,6 +97,8 @@ function BuyBox({ product }: { product: ProductDetailData }) {
   const [qty, setQty] = useState(1);
   const [liked, setLiked] = useState(false);
   const [notice, setNotice] = useState('');
+  const [adding, setAdding] = useState(false);
+  const addItem = useCartStore((state) => state.add);
 
   const selected: ProductVariantView | undefined = variants.find((v) => v._id === variantId);
   const maxQty = selected ? Math.max(1, Math.min(MAX_QTY, selected.SoLuongCo)) : 1;
@@ -112,10 +110,25 @@ function BuyBox({ product }: { product: ProductDetailData }) {
     setNotice('');
   };
 
-  const addToCart = () => {
-    if (!selected || !canBuy) return;
-    // TODO: nối API giỏ hàng (backend chưa có route /api/me/cart). Cần gửi { MaSPDungTich: selected._id, SoLuongChonMua: qty }.
-    setNotice(`Đã thêm ${qty} × ${product.TenSP} (${selected.TenDungTich}) vào giỏ hàng.`);
+  const addToCart = async () => {
+    if (!selected || !canBuy || adding) return;
+    if (!role) {
+      setNotice(LOGIN_REQUIRED);
+      return;
+    }
+    if (role !== 'customer') {
+      setNotice('Tài khoản quản trị không dùng được giỏ hàng. Hãy đăng nhập bằng tài khoản khách hàng.');
+      return;
+    }
+    setAdding(true);
+    try {
+      await addItem(selected._id, qty);
+      setNotice(`Đã thêm ${qty} × ${product.TenSP} (${selected.TenDungTich}) vào giỏ hàng.`);
+    } catch (err) {
+      setNotice(getErrorMessage(err));
+    } finally {
+      setAdding(false);
+    }
   };
 
   const toggleLike = () => {
@@ -181,7 +194,7 @@ function BuyBox({ product }: { product: ProductDetailData }) {
           </button>
         </div>
 
-        <button type="button" className="pd-btn pd-btn--primary" disabled={!canBuy} onClick={addToCart}>
+        <button type="button" className="pd-btn pd-btn--primary" disabled={!canBuy || adding} onClick={addToCart}>
           <ShoppingCart size={18} aria-hidden="true" />
           Thêm vào giỏ hàng
         </button>
@@ -194,10 +207,16 @@ function BuyBox({ product }: { product: ProductDetailData }) {
 
       <p className="pd-notice" role="status">
         {notice}
-        {notice && (
+        {notice.startsWith('Đã thêm') && (
           <>
             {' '}
             <Link to="/gio-hang">Xem giỏ hàng</Link>
+          </>
+        )}
+        {notice === LOGIN_REQUIRED && (
+          <>
+            {' '}
+            <Link to="/login">Đăng nhập</Link>
           </>
         )}
       </p>

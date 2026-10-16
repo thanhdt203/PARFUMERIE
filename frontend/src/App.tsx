@@ -6,7 +6,9 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
-import { CartPage, WishlistPage } from './pages/CustomerPages';
+import { WishlistPage } from './pages/CustomerPages';
+import { CartPage } from './pages/CartPage';
+import CartSync from './components/CartSync';
 import ComingSoonPage from './pages/admin/ComingSoonPage';
 
 // Tách Dashboard (kéo theo Recharts) thành chunk riêng để trang khách tải nhẹ
@@ -15,9 +17,12 @@ const ProductsPage = lazy(() => import('./pages/admin/ProductsPage'));
 const ThuongHieuPage = lazy(() => import('./pages/admin/CatalogPages').then((m) => ({ default: m.ThuongHieuPage })));
 const DanhMucPage = lazy(() => import('./pages/admin/CatalogPages').then((m) => ({ default: m.DanhMucPage })));
 const DungTichPage = lazy(() => import('./pages/admin/CatalogPages').then((m) => ({ default: m.DungTichPage })));
+const OrdersPage = lazy(() => import('./pages/admin/OrdersPage'));
 
 function App() {
   return (
+    <>
+    <CartSync />
     <Routes>
       {/* ai cũng vào được (kể cả chưa đăng nhập) */}
       <Route path="/" element={<HomePage />} />
@@ -41,7 +46,7 @@ function App() {
           <Route path="dung-tich" element={<DungTichPage />} />
           <Route path="kho" element={<ComingSoonPage />} />
           <Route path="voucher" element={<ComingSoonPage />} />
-          <Route path="don-hang" element={<ComingSoonPage />} />
+          <Route path="don-hang" element={<OrdersPage />} />
           <Route path="khach-hang" element={<ComingSoonPage />} />
           <Route path="bao-cao" element={<ComingSoonPage />} />
 
@@ -58,6 +63,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 

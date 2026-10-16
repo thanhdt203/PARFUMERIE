@@ -6,10 +6,12 @@ import { connectDB } from "./libs/db.js";
 import authRoute from './routers/authRoute.js';
 import khachHangRoute from './routers/khachHangRoute.js';
 import meRoute from './routers/meRoute.js';
+import gioHangRoute from './routers/gioHangRoute.js';
 import productRoute from './routers/productRoute.js';
 import catalogRoute from './routers/catalogRoute.js';
 import adminProductRoute from './routers/adminProductRoute.js';
 import adminCatalogRoute from './routers/adminCatalogRoute.js';
+import adminOrderRoute from './routers/adminOrderRoute.js';
 import { protectedRoute, authorize } from "./middlewares/authMiddleware.js";
 
 dotenv.config()
@@ -29,10 +31,12 @@ app.use('/api/catalog', catalogRoute);
 
 // private routes
 app.use(protectedRoute);
+app.use('/api/me/cart', authorize('customer'), gioHangRoute);
 app.use('/api/me', meRoute);
 app.use('/api/khachhangs', authorize('customer'), khachHangRoute);
 app.use('/api/admin/products', authorize('staff', 'admin'), adminProductRoute);
 app.use('/api/admin/catalog', authorize('staff', 'admin'), adminCatalogRoute);
+app.use('/api/admin/orders', authorize('staff', 'admin'), adminOrderRoute);
 
 app.use((err, req, res, next) => {
     if (err.type === 'entity.parse.failed') {

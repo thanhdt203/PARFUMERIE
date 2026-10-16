@@ -4,7 +4,7 @@ import { SAN_PHAM_DUNG_TICH } from '../data/sanPhamDungTich';
 import { THUONG_HIEU } from '../data/thuongHieu';
 import { DANH_MUC } from '../data/danhMuc';
 import { DUNG_TICH } from '../data/dungTich';
-import type { ProductCardData, ProductDetailData, ProductSection } from '../types/shop';
+import type { FilterOptions, ProductCardData, ProductDetailData, ProductFilters, ProductSection } from '../types/shop';
 import { mockDelay, USE_MOCK } from './config';
 
 export interface ShopService {
@@ -12,9 +12,16 @@ export interface ShopService {
   getProduct(id: string): Promise<ProductDetailData>;
   /** Sản phẩm cùng danh mục (bỏ chính nó) */
   getRelated(product: ProductDetailData): Promise<ProductCardData[]>;
+  /** Các lựa chọn cho thanh lọc */
+  getFilterOptions(): Promise<FilterOptions>;
+  /** Lọc sản phẩm (dùng khi người dùng đã chọn ít nhất một bộ lọc) */
+  searchProducts(filters: ProductFilters): Promise<ProductCardData[]>;
 }
 
 const SO_SP_LIEN_QUAN = 4;
+const SO_SP_KET_QUA = 24;
+const GIOI_TINH = ['nam', 'nu', 'unisex'];
+const NHOM_HUONG = ['floral', 'woody', 'oriental', 'fresh', 'citrus', 'fruity', 'aromatic', 'gourmand', 'chypre', 'musk'];
 
 const SO_SP_MOI_MUC = 10;
 
@@ -30,11 +37,26 @@ function getAllMockProducts(): ProductCardData[] {
       GiaThapNhat: gia.length ? Math.min(...gia) : 0,
       GiaCaoNhat: gia.length ? Math.max(...gia) : 0,
       AnhChinh: null,
+      GioiTinh: sp.GioiTinh,
+      NhomHuong: sp.NhomHuong,
     };
   });
 }
 
 const mockService: ShopService = {
+  async getFilterOptions() {
+    await mockDelay();
+    const gia = getAllMockProducts().map((p) => p.GiaCaoNhat);
+    return { GioiTinh: GIOI_TINH, NhomHuong: NHOM_HUONG, KhoangGia: { min: 0, max: gia.length ? Math.max(...gia) : 0 } };
+  },
+  async searchProducts(f) {
+    await mockDelay();
+    return getAllMockProducts()
+      .filter((p) => f.gioitinh.length === 0 || f.gioitinh.includes(p.GioiTinh ?? ''))
+      .filter((p) => f.nhomhuong.length === 0 || f.nhomhuong.some((h) => p.NhomHuong?.includes(h)))
+      .filter((p) => f.giaden === undefined || p.GiaThapNhat <= f.giaden)
+      .slice(0, SO_SP_KET_QUA);
+  },
   async getProduct(id) {
     await mockDelay();
     const sp = SAN_PHAM.find((x) => x._id === id && !x.DaAn);
@@ -121,6 +143,31 @@ interface ApiProductDetail extends Omit<ProductDetailData, 'BienThe'> {
 }
 
 const apiService: ShopService = {
+  async getFilterOptions() {
+    const { data } = await api.get<{ data: FilterOptions }>('/products/filters');
+    return data.data;
+  },
+  async searchProducts(f) {
+    const { data } = await api.get<{ data: ApiProduct[] }>('/products', {
+      params: {
+        sort: 'moi',
+        limit: SO_SP_KET_QUA,
+        conhang: true,
+        // backend nhận nhiều giá trị cách nhau bằng dấu phẩy; để trống thì không gửi
+        gioitinh: f.gioitinh.join(',') || undefined,
+        nhomhuong: f.nhomhuong.join(',') || undefined,
+        giaden: f.giaden,
+      },
+    });
+    return data.data.map((sp) => ({
+      _id: sp._id,
+      TenSP: sp.TenSP,
+      TenThuongHieu: sp.ThuongHieu?.TenTH ?? '',
+      GiaThapNhat: sp.GiaThapNhat,
+      GiaCaoNhat: sp.GiaCaoNhat,
+      AnhChinh: sp.AnhChinh,
+    }));
+  },
   async getProduct(id) {
     const { data } = await api.get<{ data: ApiProductDetail }>(`/products/${id}`);
     const sp = data.data;

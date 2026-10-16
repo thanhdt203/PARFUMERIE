@@ -1,0 +1,33 @@
+.pgrid {
+  margin-bottom: 36px;
+}
+.pgrid__title {
+  margin: 0 0 18px;
+  color: var(--text-strong);
+  font-family: 'Playfair Display', 'Noto Serif', Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+}
+.pgrid__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
+}
+/* thẻ trong lưới giãn theo ô thay vì cố định 220px như hàng cuộn */
+.pgrid__list .pcard {
+  flex: initial;
+  min-height: 260px;
+}
+.pgrid__empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+@media (max-width: 640px) {
+  .pgrid__title {
+    font-size: 22px;
+  }
+  .pgrid__list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}

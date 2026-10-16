@@ -64,6 +64,7 @@
   border-radius: 3px;
   background: var(--bg);
   color: var(--text-title);
+  font-family: var(--font-base); /* chữ quá nhỏ, giữ sans-serif cho dễ đọc */
   font-size: 8px;
   font-weight: 700;
   text-align: center;
@@ -111,6 +112,7 @@
   width: fit-content;
   margin-bottom: 8px;
   padding: 2px 8px;
+  font-family: var(--font-base); /* chữ quá nhỏ, giữ sans-serif cho dễ đọc */
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;

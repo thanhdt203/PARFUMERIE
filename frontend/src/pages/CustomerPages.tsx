@@ -1,24 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import SiteLayout from '../components/SiteLayout';
 import { useAuth } from '../context/AuthContext';
 
-// Giỏ hàng và yêu thích: hiện trạng thái trống, nối với dữ liệu thật khi có API.
-
-export function CartPage() {
-  return (
-    <SiteLayout crumb="Giỏ hàng">
-      <div className="site__empty">
-        <ShoppingCart className="site__empty-icon" size={44} strokeWidth={1.25} aria-hidden="true" />
-        <h1>Giỏ hàng của bạn đang trống</h1>
-        <p>Chọn vài chai nước hoa ưng ý và thêm vào giỏ để bắt đầu.</p>
-        <Link to="/" className="site__empty-link">
-          Tiếp tục mua sắm
-        </Link>
-      </div>
-    </SiteLayout>
-  );
-}
+// Yêu thích: hiện trạng thái trống, nối với dữ liệu thật khi có API.
 
 export function WishlistPage() {
   const { role } = useAuth();

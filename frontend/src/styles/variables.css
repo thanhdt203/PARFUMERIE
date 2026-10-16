@@ -47,6 +47,8 @@
 
   /* ---------- Font ---------- */
   --font-base: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+  /* Font chữ của trang khách (giống tiêu đề "Chưa biết chọn mùi hương nào?") */
+  --font-display: 'Playfair Display', 'Noto Serif', Georgia, serif;
 }
 
 /* ==========================================================

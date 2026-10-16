@@ -4,7 +4,8 @@
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-base);
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums; /* Playfair mặc định dùng số kiểu cũ (lệch chân), đổi sang số thẳng hàng */
   font-size: 14px;
   line-height: 1.5;
 }

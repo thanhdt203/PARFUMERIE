@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import FloatingContact from './FloatingContact';
 import Footer from './Footer';
 import SiteHeaderActions from './SiteHeaderActions';
+import logo from '../assets/logo.png';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { catalogService } from '../services/catalogService';
 import './SiteLayout.css';
@@ -267,6 +268,9 @@ export default function SiteLayout({ crumb, trail, children }: SiteLayoutProps) 
 
       <header className="site__header">
         <div className="site__header-inner">
+          <Link to="/" className="site__logo" aria-label="Parfumerie - Trang chủ">
+            <img src={logo} alt="Parfumerie - Magic Of Your Emotions" />
+          </Link>
           <SiteNav />
           <SiteHeaderActions />
         </div>

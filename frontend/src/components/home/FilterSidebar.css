@@ -1,0 +1,109 @@
+.filt {
+  font-size: 14px;
+}
+.filt__toggle {
+  display: none; /* chỉ hiện trên điện thoại */
+}
+.filt__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.filt__title {
+  margin: 0;
+  color: var(--text-strong);
+  font-family: 'Playfair Display', 'Noto Serif', Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+}
+.filt__reset {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--green);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.filt__msg {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.filt__group {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.filt__group legend {
+  padding: 0;
+  margin-bottom: 8px;
+  color: var(--text-title);
+  font-size: 14px;
+  font-weight: 700;
+}
+.filt__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  color: var(--text);
+  cursor: pointer;
+}
+.filt__check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.filt__check:hover {
+  color: var(--green);
+}
+.filt__range {
+  width: 100%;
+  margin: 4px 0 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.filt__price {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.filt input:focus-visible,
+.filt__reset:focus-visible,
+.filt__toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+@media (max-width: 800px) {
+  .filt__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .filt__panel {
+    display: none;
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .filt__panel.is-open {
+    display: block;
+  }
+}

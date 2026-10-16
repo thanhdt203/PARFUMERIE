@@ -9,6 +9,9 @@ export interface ProductCardData {
   GiaCaoNhat: number;
   /** Ảnh chính; để trống thì ô hiển thị hình chai mặc định */
   AnhChinh: string | null;
+  /** Dùng cho bộ lọc phía mock; API thật đã lọc ở server */
+  GioiTinh?: string;
+  NhomHuong?: string[];
 }
 
 /** Một mục trên trang chủ (một hàng cuộn ngang) */
@@ -46,4 +49,28 @@ export interface ProductDetailData {
   BienThe: ProductVariantView[];
   /** Đã sắp: ảnh chính đứng đầu */
   HinhAnh: Array<{ _id: Id; DuongDan: string }>;
+}
+
+/** Giá trị bộ lọc ở trang chủ (khớp tham số GET /api/products) */
+export interface ProductFilters {
+  gioitinh: string[];
+  nhomhuong: string[];
+  /** Giá tối đa (đ); undefined = không giới hạn */
+  giaden?: number;
+}
+
+/** Các lựa chọn của thanh lọc (GET /api/products/filters) */
+export interface FilterOptions {
+  GioiTinh: string[];
+  NhomHuong: string[];
+  KhoangGia: { min: number; max: number };
+}
+
+/** Một tin nhắn trong khung chat tư vấn AI */
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  /** Sản phẩm AI gợi ý kèm theo câu trả lời */
+  products?: ProductCardData[];
 }

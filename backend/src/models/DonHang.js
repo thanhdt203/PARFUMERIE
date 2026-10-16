@@ -1,18 +1,28 @@
 import mongoose from "mongoose";
 
+export const TRANG_THAI_DON_HANG = [
+    "Chờ xác nhận",
+    "Đang xử lý",
+    "Đang giao",
+    "Hoàn thành",
+    "Đã hủy"
+];
+
 const donHangSchema = new mongoose.Schema({
     NgayDat: {
         type: Date,
-        required: true
+        required: true,
+        default: Date.now
     },
     TongTien: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     TrangThai: {
         type: String,
-        required: true,
-        maxlength: 50
+        enum: TRANG_THAI_DON_HANG,
+        default: "Chờ xác nhận"
     },
     MaPTTT: {
         type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +31,7 @@ const donHangSchema = new mongoose.Schema({
     },
     GhiChu: {
         type: String,
-        required: true,
+        default: "",
         maxlength: 150
     },
     HoTenKH: {
@@ -59,15 +69,17 @@ const donHangSchema = new mongoose.Schema({
         required: true,
         maxlength: 150
     },
+    // đơn khách đặt online chưa có nhân viên nhận nên không bắt buộc
     MaNV: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "NhanVien",
-        required: true
+        default: null
     },
+    // không phải đơn nào cũng dùng voucher
     MaVoucher: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Voucher",
-        required: true
+        default: null
     },
     MaKH: {
         type: mongoose.Schema.Types.ObjectId,
@@ -77,6 +89,11 @@ const donHangSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+// phục vụ lọc ở trang Đơn hàng và aggregate cho Dashboard
+donHangSchema.index({ TrangThai: 1, NgayDat: -1 });
+donHangSchema.index({ MaKH: 1, NgayDat: -1 });
+donHangSchema.index({ NgayDat: -1 });
 
 const DonHang = mongoose.model("DonHang", donHangSchema);
 export default DonHang;
