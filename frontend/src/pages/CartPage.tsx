@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
 import SiteLayout from '../components/SiteLayout';
 import { BottlePlaceholder } from '../components/shop/ProductCard';
@@ -126,6 +126,7 @@ function Empty({ icon = true, title, text, to, action }: { icon?: boolean; title
 }
 
 export function CartPage() {
+  const navigate = useNavigate();
   const { role, loading: authLoading } = useAuth();
   const { items, tongSoLuong, tamTinh, loaded, loading, error, load, setQty, remove } = useCartStore();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -149,10 +150,7 @@ export function CartPage() {
   // Còn dòng nào vượt tồn kho / hết hàng thì chưa cho mua
   const hasProblem = items.some((i) => i.SoLuongCo <= 0 || i.SoLuongChonMua > i.SoLuongCo);
 
-  const handleBuyNow = () => {
-    // TODO: chuyển sang trang thanh toán khi có (tạo đơn từ các dòng giỏ -> DonHang / ChiTietDonHang)
-    setMessage('Trang thanh toán đang được xây dựng.');
-  };
+  const handleBuyNow = () => navigate('/thanh-toan');
 
   let content;
   if (authLoading) {

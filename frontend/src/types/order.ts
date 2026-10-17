@@ -57,7 +57,7 @@ export interface AdminOrderDetail {
   PhuongThucThanhToan: { _id: Id; TenPTTT: string } | null;
   /** Nhân viên xử lý, null nếu chưa ai nhận đơn */
   NhanVien: { _id: Id; HoTenNV: string } | null;
-  Voucher: { _id: Id; GiaTri: number } | null;
+  Voucher: { _id: Id; MaCode: string | null; GiaTri: number } | null;
   ChiTiet: AdminOrderLine[];
   createdAt: IsoDate;
   updatedAt: IsoDate;

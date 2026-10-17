@@ -1,0 +1,411 @@
+/* ---------- Đơn hàng của khách ---------- */
+.myorders {
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--bg);
+}
+.myorders__head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.myorders__head--row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.myorders__title {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.myorders__title span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: none;
+}
+.myorders__pad {
+  padding: 20px;
+}
+
+/* ---------- Trạng thái đơn ---------- */
+.myorders__status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.myorders__status--warning {
+  background: #fff4dd;
+  color: #8a5a00;
+}
+.myorders__status--info {
+  background: #e8f1fb;
+  color: #1f5a96;
+}
+.myorders__status--success {
+  background: var(--success-bg);
+  color: var(--green-hover);
+}
+.myorders__status--danger {
+  background: var(--error-bg);
+  color: var(--error-dark);
+}
+
+/* ---------- Danh sách ---------- */
+.myorders__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.myorders__card {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.myorders__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-soft);
+}
+.myorders__code {
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.myorders__code:hover {
+  color: var(--green);
+}
+.myorders__date {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.myorders__lines {
+  margin: 0;
+  padding: 4px 16px 0;
+  list-style: none;
+}
+.myorders__line {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+}
+.myorders__line-name {
+  color: var(--text-strong);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.myorders__line-qty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.myorders__more {
+  margin: 0;
+  padding: 0 16px 8px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.myorders__card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+.myorders__total {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 13px;
+}
+.myorders__total strong {
+  color: var(--green);
+  font-size: 16px;
+}
+.myorders__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.myorders__pager .myorders__btn {
+  padding: 0 16px;
+}
+
+.myorders__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 56px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.myorders__thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.myorders__thumb .pcard__placeholder {
+  width: 60%;
+  height: auto;
+}
+
+/* ---------- Chi tiết ---------- */
+.myorders__success {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--green);
+  background: var(--success-bg);
+  color: var(--green-hover);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.myorders__success svg {
+  flex: none;
+  margin-top: 1px;
+}
+.myorders__detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  align-items: start;
+}
+.myorders__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.myorders__item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.myorders__item:first-child {
+  padding-top: 0;
+}
+.myorders__item:last-child {
+  border-bottom: 0;
+}
+.myorders__item-name {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-decoration: none;
+}
+a.myorders__item-name:hover {
+  color: var(--green);
+}
+.myorders__item-meta {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.myorders__item-total {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.myorders__aside {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-soft);
+}
+.myorders__info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+.myorders__info dt {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.myorders__info dd {
+  margin: 2px 0 0;
+  color: var(--text-strong);
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+.myorders__sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--text-strong);
+  font-size: 13px;
+}
+.myorders__sum span {
+  font-weight: 700;
+}
+.myorders__sum strong {
+  color: var(--green);
+  font-size: 24px;
+}
+.myorders__alert {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 3px;
+  background: var(--error-bg);
+  color: var(--error-dark);
+  font-size: 12.5px;
+}
+.myorders__confirm p {
+  margin: 0 0 8px;
+  color: var(--text-strong);
+  font-size: 13px;
+}
+.myorders__confirm div {
+  display: flex;
+  gap: 8px;
+}
+.myorders__confirm .myorders__btn {
+  flex: 1;
+}
+
+/* ---------- Nút ---------- */
+.myorders__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 3px;
+  border: 1px solid var(--green);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.myorders__btn--ghost {
+  background: var(--bg);
+  color: var(--green);
+}
+.myorders__btn--ghost:hover:not(:disabled) {
+  background: var(--success-bg);
+}
+.myorders__btn--danger {
+  border-color: var(--error);
+  background: var(--error);
+  color: var(--text-on-green);
+}
+.myorders__btn--danger:hover:not(:disabled) {
+  background: var(--error-dark);
+  border-color: var(--error-dark);
+}
+.myorders__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.myorders__btn:focus-visible,
+.myorders__link:focus-visible,
+.myorders__code:focus-visible,
+.myorders__item-name:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.myorders__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--green);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.myorders__link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Trạng thái ---------- */
+.myorders__state {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--error-dark);
+}
+.myorders__skel {
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--bg-soft) 25%, var(--line-soft) 50%, var(--bg-soft) 75%);
+  background-size: 200% 100%;
+  animation: myorders-shimmer 1.2s linear infinite;
+}
+.myorders__skel--title {
+  width: 180px;
+  height: 20px;
+}
+.myorders__skel--block {
+  height: 110px;
+  margin-bottom: 16px;
+}
+@keyframes myorders-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .myorders__skel {
+    animation: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .myorders__detail {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+@media (max-width: 560px) {
+  .myorders__pad {
+    padding: 14px;
+  }
+  .myorders__card-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

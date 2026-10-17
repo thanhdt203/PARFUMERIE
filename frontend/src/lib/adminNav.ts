@@ -91,7 +91,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: Warehouse,
         roles: STAFF_ADMIN,
         phase: 4,
-        description: 'Tồn kho theo biến thể, nhập/xuất kho và chiết dung tích.',
+        description: 'Tồn kho theo biến thể: lọc sắp hết / hết hàng, nhập thêm, giảm bớt, kiểm kê.',
       },
     ],
   },

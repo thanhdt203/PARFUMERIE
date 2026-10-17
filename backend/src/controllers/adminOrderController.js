@@ -180,7 +180,7 @@ const layChiTiet = async (id) => {
     const don = await DonHang.findById(id)
         .populate("MaPTTT", "TenPTTT")
         .populate("MaNV", "HoTenNV")
-        .populate("MaVoucher", "GiaTri NgayBatDau NgayKetThuc")
+        .populate("MaVoucher", "MaCode GiaTri NgayBatDau NgayKetThuc")
         .lean();
     if (!don) return null;
 
@@ -245,7 +245,9 @@ const layChiTiet = async (id) => {
         MaKH: don.MaKH,
         PhuongThucThanhToan: don.MaPTTT ? { _id: don.MaPTTT._id, TenPTTT: don.MaPTTT.TenPTTT } : null,
         NhanVien: don.MaNV ? { _id: don.MaNV._id, HoTenNV: don.MaNV.HoTenNV } : null,
-        Voucher: don.MaVoucher ? { _id: don.MaVoucher._id, GiaTri: don.MaVoucher.GiaTri } : null,
+        Voucher: don.MaVoucher
+            ? { _id: don.MaVoucher._id, MaCode: don.MaVoucher.MaCode ?? null, GiaTri: don.MaVoucher.GiaTri }
+            : null,
         ChiTiet: chiTiet,
         createdAt: don.createdAt,
         updatedAt: don.updatedAt

@@ -28,12 +28,14 @@ interface FilterSidebarProps {
   onReset: () => void;
   /** Có bộ lọc nào đang bật không (để hiện nút Xóa lọc) */
   active: boolean;
+  /** Ẩn nhóm "Giới tính" (trang danh mục nam / nữ / unisex đã chọn giới tính qua danh mục rồi) */
+  hideGender?: boolean;
 }
 
 const toggle = (list: string[], item: string) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
 
 /** Thanh lọc bên trái trang chủ: giới tính, nhóm hương, khoảng giá. Điện thoại: thu gọn sau nút "Bộ lọc". */
-export default function FilterSidebar({ options, value, onChange, onReset, active }: FilterSidebarProps) {
+export default function FilterSidebar({ options, value, onChange, onReset, active, hideGender = false }: FilterSidebarProps) {
   const [open, setOpen] = useState(false);
 
   const maxPrice = options ? Math.ceil(options.KhoangGia.max / PRICE_STEP) * PRICE_STEP : 0;
@@ -68,10 +70,12 @@ export default function FilterSidebar({ options, value, onChange, onReset, activ
           <p className="filt__msg">Đang tải...</p>
         ) : (
           <>
-            <fieldset className="filt__group">
-              <legend>Giới tính</legend>
-              {checkboxes('gioitinh', options.GioiTinh, GIOI_TINH_LABEL)}
-            </fieldset>
+            {!hideGender && (
+              <fieldset className="filt__group">
+                <legend>Giới tính</legend>
+                {checkboxes('gioitinh', options.GioiTinh, GIOI_TINH_LABEL)}
+              </fieldset>
+            )}
 
             <fieldset className="filt__group">
               <legend>Nhóm hương</legend>

@@ -5,9 +5,12 @@ import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { HomePage } from './pages/HomePage';
+import { ProductListPage } from './pages/ProductListPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { WishlistPage } from './pages/CustomerPages';
 import { CartPage } from './pages/CartPage';
+import { CheckoutPage } from './pages/CheckoutPage';
+import { MyOrderDetailPage, MyOrdersPage } from './pages/MyOrdersPages';
 import CartSync from './components/CartSync';
 import ComingSoonPage from './pages/admin/ComingSoonPage';
 
@@ -18,6 +21,9 @@ const ThuongHieuPage = lazy(() => import('./pages/admin/CatalogPages').then((m) 
 const DanhMucPage = lazy(() => import('./pages/admin/CatalogPages').then((m) => ({ default: m.DanhMucPage })));
 const DungTichPage = lazy(() => import('./pages/admin/CatalogPages').then((m) => ({ default: m.DungTichPage })));
 const OrdersPage = lazy(() => import('./pages/admin/OrdersPage'));
+const VouchersPage = lazy(() => import('./pages/admin/VouchersPage'));
+const InventoryPage = lazy(() => import('./pages/admin/InventoryPage'));
+const CustomersPage = lazy(() => import('./pages/admin/CustomersPage'));
 
 function App() {
   return (
@@ -26,10 +32,14 @@ function App() {
     <Routes>
       {/* ai cũng vào được (kể cả chưa đăng nhập) */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/nuoc-hoa" element={<ProductListPage />} />
       <Route path="/nuoc-hoa/:id" element={<ProductDetailPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/gio-hang" element={<CartPage />} />
+      <Route path="/thanh-toan" element={<CheckoutPage />} />
+      <Route path="/don-hang" element={<MyOrdersPage />} />
+      <Route path="/don-hang/:id" element={<MyOrderDetailPage />} />
       <Route path="/yeu-thich" element={<WishlistPage />} />
 
       {/* đường dẫn cũ của nhân viên -> chuyển sang khu quản trị chung */}
@@ -44,10 +54,10 @@ function App() {
           <Route path="danh-muc" element={<DanhMucPage />} />
           <Route path="thuong-hieu" element={<ThuongHieuPage />} />
           <Route path="dung-tich" element={<DungTichPage />} />
-          <Route path="kho" element={<ComingSoonPage />} />
-          <Route path="voucher" element={<ComingSoonPage />} />
+          <Route path="kho" element={<InventoryPage />} />
+          <Route path="voucher" element={<VouchersPage />} />
           <Route path="don-hang" element={<OrdersPage />} />
-          <Route path="khach-hang" element={<ComingSoonPage />} />
+          <Route path="khach-hang" element={<CustomersPage />} />
           <Route path="bao-cao" element={<ComingSoonPage />} />
 
           {/* chỉ admin: staff gõ URL trực tiếp sẽ bị đưa về /admin */}

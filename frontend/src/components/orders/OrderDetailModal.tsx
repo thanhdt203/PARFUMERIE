@@ -229,7 +229,7 @@ export default function OrderDetailModal({ orderId, onClose, onChanged }: OrderD
                 </div>
                 {giamGia > 0 && (
                   <div className="flex justify-between gap-4">
-                    <dt className="text-ink-muted">Giảm giá{order.Voucher ? ' (voucher)' : ''}</dt>
+                    <dt className="text-ink-muted">Giảm giá{order.Voucher ? ` (${order.Voucher.MaCode ?? 'voucher'})` : ''}</dt>
                     <dd className="tabular-nums text-ink">−{formatVnd(giamGia)}</dd>
                   </div>
                 )}

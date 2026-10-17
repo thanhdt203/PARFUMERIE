@@ -7,11 +7,15 @@ import authRoute from './routers/authRoute.js';
 import khachHangRoute from './routers/khachHangRoute.js';
 import meRoute from './routers/meRoute.js';
 import gioHangRoute from './routers/gioHangRoute.js';
+import customerOrderRoute from './routers/customerOrderRoute.js';
 import productRoute from './routers/productRoute.js';
 import catalogRoute from './routers/catalogRoute.js';
 import adminProductRoute from './routers/adminProductRoute.js';
 import adminCatalogRoute from './routers/adminCatalogRoute.js';
 import adminOrderRoute from './routers/adminOrderRoute.js';
+import adminVoucherRoute from './routers/adminVoucherRoute.js';
+import adminCustomerRoute from './routers/adminCustomerRoute.js';
+import adminInventoryRoute from './routers/adminInventoryRoute.js';
 import { protectedRoute, authorize } from "./middlewares/authMiddleware.js";
 
 dotenv.config()
@@ -32,11 +36,15 @@ app.use('/api/catalog', catalogRoute);
 // private routes
 app.use(protectedRoute);
 app.use('/api/me/cart', authorize('customer'), gioHangRoute);
+app.use('/api/me/orders', authorize('customer'), customerOrderRoute);
 app.use('/api/me', meRoute);
 app.use('/api/khachhangs', authorize('customer'), khachHangRoute);
 app.use('/api/admin/products', authorize('staff', 'admin'), adminProductRoute);
 app.use('/api/admin/catalog', authorize('staff', 'admin'), adminCatalogRoute);
 app.use('/api/admin/orders', authorize('staff', 'admin'), adminOrderRoute);
+app.use('/api/admin/vouchers', authorize('staff', 'admin'), adminVoucherRoute);
+app.use('/api/admin/customers', authorize('staff', 'admin'), adminCustomerRoute);
+app.use('/api/admin/inventory', authorize('staff', 'admin'), adminInventoryRoute);
 
 app.use((err, req, res, next) => {
     if (err.type === 'entity.parse.failed') {

@@ -1,0 +1,282 @@
+/* ---------- Đầu trang: tên danh mục + tab nam / nữ / unisex ---------- */
+.plist__hero {
+  margin: 0 0 24px;
+  padding: 26px 28px 22px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: linear-gradient(120deg, var(--success-bg), var(--bg) 78%);
+}
+.plist__eyebrow {
+  margin: 0 0 6px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.plist__title {
+  margin: 0;
+  color: var(--text-strong);
+  font-family: 'Playfair Display', 'Noto Serif', Georgia, serif;
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+.plist__desc {
+  max-width: 620px;
+  margin: 8px 0 18px;
+  color: var(--text-muted);
+}
+
+.plist__tabs,
+.plist__subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.plist__subtabs {
+  margin-top: 12px;
+}
+.plist__tab,
+.plist__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-strong);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.plist__tab {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.plist__chip {
+  padding: 5px 14px;
+  font-size: 13px;
+}
+.plist__tab:hover,
+.plist__chip:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+.plist__tab.is-active,
+.plist__chip.is-active {
+  border-color: var(--green);
+  background: var(--green);
+  color: var(--text-on-green);
+}
+.plist__tab:focus-visible,
+.plist__chip:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* ---------- Bộ lọc bên trái + kết quả bên phải ---------- */
+.plist__layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+.plist__main {
+  min-width: 0;
+}
+
+.plist__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.plist__count {
+  margin: 0;
+  color: var(--text-muted);
+}
+.plist__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.plist__sort select {
+  padding: 7px 28px 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-strong);
+  font: inherit;
+  cursor: pointer;
+}
+.plist__sort select:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.plist__grid {
+  transition: opacity 0.15s ease;
+}
+.plist__grid.is-pending {
+  opacity: 0.55;
+}
+
+/* ---------- Phân trang ---------- */
+.plist__pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+}
+.plist__page {
+  min-width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-strong);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.plist__page:hover:not(:disabled):not(.is-active) {
+  border-color: var(--green);
+  color: var(--green);
+}
+.plist__page.is-active {
+  border-color: var(--green);
+  background: var(--green);
+  color: var(--text-on-green);
+  font-weight: 700;
+  cursor: default;
+}
+.plist__page:disabled {
+  color: var(--text-disabled);
+  background: var(--bg-disabled);
+  cursor: not-allowed;
+}
+.plist__page:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.plist__gap {
+  padding: 0 4px;
+  color: var(--text-muted);
+}
+.plist__range {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- Trạng thái trống / lỗi ---------- */
+.plist__empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-placeholder);
+}
+.plist__empty h2 {
+  margin: 12px 0 6px;
+  color: var(--text-title);
+  font-size: 20px;
+  font-weight: 500;
+}
+.plist__empty p {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+}
+.plist__btn {
+  display: inline-block;
+  padding: 10px 22px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--green);
+  color: var(--text-on-green);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.plist__btn:hover {
+  background: var(--green-hover);
+}
+.plist__btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+.plist__msg {
+  margin: 0;
+  color: var(--text-muted);
+}
+.plist__msg--error {
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--error-bg);
+  color: var(--error-dark);
+}
+.plist__msg button {
+  margin-left: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.plist__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 800px) {
+  .plist__layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+@media (max-width: 640px) {
+  .plist__hero {
+    padding: 20px 16px 16px;
+  }
+  .plist__title {
+    font-size: 28px;
+  }
+  /* tab cuộn ngang thay vì xuống nhiều dòng */
+  .plist__tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .plist__tab {
+    flex: none;
+  }
+  .plist__sort span {
+    display: none;
+  }
+}

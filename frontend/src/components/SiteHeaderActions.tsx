@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, LayoutDashboard, LogOut, ShoppingCart, User } from 'lucide-react';
+import { Heart, LayoutDashboard, LogOut, Package, ShoppingCart, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCartStore } from '../store/cartStore';
 import { useDismiss } from '../hooks/useDismiss';
@@ -73,6 +73,12 @@ function AccountButton() {
       {open && (
         <div role="menu" className="site__menu">
           <p className="site__menu-name">{name}</p>
+          {role === 'customer' && (
+            <Link to="/don-hang" role="menuitem" className="site__menu-item" onClick={close}>
+              <Package size={16} strokeWidth={1.75} aria-hidden="true" />
+              Đơn hàng của tôi
+            </Link>
+          )}
           {canManage && (
             <Link to="/admin" role="menuitem" className="site__menu-item" onClick={close}>
               <LayoutDashboard size={16} strokeWidth={1.75} aria-hidden="true" />
