@@ -16,6 +16,7 @@ import adminOrderRoute from './routers/adminOrderRoute.js';
 import adminVoucherRoute from './routers/adminVoucherRoute.js';
 import adminCustomerRoute from './routers/adminCustomerRoute.js';
 import adminInventoryRoute from './routers/adminInventoryRoute.js';
+import aiRoute from './ai/aiRoute.js';
 import { protectedRoute, authorize } from "./middlewares/authMiddleware.js";
 
 dotenv.config()
@@ -32,6 +33,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoute);
 app.use('/api/products', productRoute);
 app.use('/api/catalog', catalogRoute);
+app.use('/api/ai', aiRoute);
 
 // private routes
 app.use(protectedRoute);

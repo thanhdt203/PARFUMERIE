@@ -1,0 +1,2 @@
+"""Parfumerie AI service."""
+
