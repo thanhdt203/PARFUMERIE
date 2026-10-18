@@ -12,6 +12,7 @@ import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { MyOrderDetailPage, MyOrdersPage } from './pages/MyOrdersPages';
 import CartSync from './components/CartSync';
+import WishlistSync from './components/WishlistSync';
 import ComingSoonPage from './pages/admin/ComingSoonPage';
 
 // Tách Dashboard (kéo theo Recharts) thành chunk riêng để trang khách tải nhẹ
@@ -29,6 +30,7 @@ function App() {
   return (
     <>
     <CartSync />
+    <WishlistSync />
     <Routes>
       {/* ai cũng vào được (kể cả chưa đăng nhập) */}
       <Route path="/" element={<HomePage />} />

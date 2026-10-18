@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import ToastViewport from './common/Toast';
 import FloatingContact from './FloatingContact';
 import Footer from './Footer';
 import SiteHeaderActions from './SiteHeaderActions';
@@ -20,7 +21,6 @@ const NAV: { label: string; to: string; menu?: MenuKind }[] = [
   { label: 'Nước hoa', to: '/nuoc-hoa', menu: 'perfume' },
   { label: 'Nước hoa chiết', to: '/nuoc-hoa-chiet', menu: 'decant' },
   { label: 'Kiến thức', to: '/kien-thuc' },
-  { label: 'Blog', to: '/blog' },
   { label: 'Liên hệ', to: '/lien-he' },
 ];
 
@@ -296,6 +296,7 @@ export default function SiteLayout({ crumb, trail, children }: SiteLayoutProps) 
 
       <Footer />
       <FloatingContact />
+      <ToastViewport />
     </div>
   );
 }
