@@ -1,5 +1,5 @@
 import api from '../lib/api';
-import type { AdminCustomerDetail, CustomerListParams, CustomerListResponse } from '../types/adminCustomer';
+import type { AdminCustomerDetail, CustomerListParams, CustomerListResponse } from '../types/adminCustomer.ts';
 
 const BASE = '/admin/customers';
 

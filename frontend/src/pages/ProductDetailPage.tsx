@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Heart, Minus, Plus, ShoppingCart, Sparkles } from 'lucide-react';
 import SiteLayout from '../components/SiteLayout';
 import ProductCard, { BottlePlaceholder } from '../components/shop/ProductCard';
 import { useAuth } from '../context/AuthContext';
 import { useAsyncData } from '../hooks/useAsyncData';
+import { useWishlistToggle } from '../hooks/useWishlistToggle';
 import { formatVnd } from '../lib/format';
 import { getErrorMessage } from '../lib/errors';
 import { GIOI_TINH_LABEL, NHOM_HUONG_OPTIONS, variantLabel } from '../lib/productOptions';
@@ -90,12 +91,11 @@ function Pyramid({ notes }: { notes: ProductDetailData['NotHuong'] }) {
 // ---------- Khối mua hàng: dung tích, số lượng, giỏ hàng, yêu thích ----------
 function BuyBox({ product }: { product: ProductDetailData }) {
   const { role } = useAuth();
-  const navigate = useNavigate();
   const variants = product.BienThe;
   const firstInStock = variants.find((v) => v.ConHang) ?? variants[0];
   const [variantId, setVariantId] = useState<string | undefined>(firstInStock?._id);
   const [qty, setQty] = useState(1);
-  const [liked, setLiked] = useState(false);
+  const { liked, busy: likeBusy, toggle: toggleLike } = useWishlistToggle(product._id);
   const [notice, setNotice] = useState('');
   const [adding, setAdding] = useState(false);
   const addItem = useCartStore((state) => state.add);
@@ -129,15 +129,6 @@ function BuyBox({ product }: { product: ProductDetailData }) {
     } finally {
       setAdding(false);
     }
-  };
-
-  const toggleLike = () => {
-    if (!role) {
-      navigate('/login');
-      return;
-    }
-    // TODO: nối API yêu thích (model YeuThich đã có ở backend, chưa có route).
-    setLiked((v) => !v);
   };
 
   if (variants.length === 0) {
@@ -199,7 +190,7 @@ function BuyBox({ product }: { product: ProductDetailData }) {
           Thêm vào giỏ hàng
         </button>
 
-        <button type="button" className="pd-btn pd-btn--ghost" aria-pressed={liked} onClick={toggleLike}>
+        <button type="button" className="pd-btn pd-btn--ghost" aria-pressed={liked} disabled={likeBusy} onClick={() => void toggleLike()}>
           <Heart size={18} aria-hidden="true" fill={liked ? 'currentColor' : 'none'} />
           Yêu thích
         </button>

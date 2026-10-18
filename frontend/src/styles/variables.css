@@ -4,13 +4,13 @@
    ========================================================== */
 :root {
   /* ---------- Màu thương hiệu ---------- */
-  --green: #0f4c35;          /* màu chủ đạo: thanh trên/dưới, nút, link, viền focus */
-  --green-hover: #0b3a29;    /* nút khi rê chuột */
-  --green-disabled: #6f8f82; /* nút bị vô hiệu hóa */
-  --green-deep: #0a2f22;     /* dải cuối footer (đậm hơn --green) */
-  --green-soft: rgba(15, 76, 53, 0.15); /* vòng sáng khi focus ô nhập */
-  --mint: #7ef0cc;           /* màu bạc hà nhấn */
-  --mint-glow: rgba(126, 240, 204, 0.55); /* viền sáng của thẻ đăng nhập/đăng ký */
+  --green: #14213d;          /* màu chủ đạo: xanh navy đêm — thanh trên/dưới, nút, link, viền focus (tên biến giữ là --green để không phải sửa các file đang dùng) */
+  --green-hover: #0b1428;    /* nút khi rê chuột */
+  --green-disabled: #8a93a8; /* nút bị vô hiệu hóa */
+  --green-deep: #0b1428;     /* dải cuối footer (đậm hơn --green) */
+  --green-soft: rgba(20, 33, 61, 0.15); /* vòng sáng khi focus ô nhập */
+  --mint: #d9bf8a;           /* màu nhấn: vàng champagne (tên biến giữ nguyên là --mint để không phải sửa các file đang dùng) */
+  --mint-glow: rgba(217, 191, 138, 0.55); /* vòng sáng vàng champagne */
 
   /* ---------- Chữ ---------- */
   --text-strong: #111;       /* menu, tiêu đề đậm */
@@ -24,7 +24,7 @@
 
   /* ---------- Nền và viền ---------- */
   --bg: #fff;
-  --bg-soft: #f6f6f6;        /* nền breadcrumb */
+  --bg-soft: #f7f8fb;        /* nền breadcrumb */
   --bg-disabled: #f3f3f3;    /* ô nhập bị khóa */
   --line: #e6e6e6;           /* viền ô nhập, đường kẻ */
   --line-soft: #eee;         /* viền ngoài nhẹ */
@@ -33,7 +33,7 @@
   --error: #c0261b;
   --error-dark: #a31f15;     /* chữ thông báo lỗi */
   --error-bg: #fdf0ef;
-  --success-bg: #eaf6f0;
+  --success-bg: #f6f1e6;
   --required: #d0021b;       /* dấu * bắt buộc */
 
   /* ---------- Mạng xã hội / liên hệ ---------- */

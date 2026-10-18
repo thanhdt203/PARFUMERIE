@@ -148,12 +148,23 @@
     color 0.2s ease,
     background-color 0.2s ease;
 }
-.pcard:hover .pcard__heart {
+.pcard__heart:hover:not(:disabled),
+.pcard__heart[aria-pressed='true'] {
   color: #d6336c;
 }
-.pcard:hover .pcard__heart svg {
+.pcard__heart[aria-pressed='true'] svg {
   fill: currentColor;
+}
+.pcard__heart:hover:not(:disabled) svg {
   animation: pcard-beat 0.6s ease;
+}
+.pcard__heart:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+.pcard__heart:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
 }
 
 /* ---------- Ảnh ---------- */
@@ -324,7 +335,7 @@
 @media (prefers-reduced-motion: reduce) {
   .pcard,
   .pcard--skeleton,
-  .pcard:hover .pcard__heart svg {
+  .pcard__heart:hover svg {
     animation: none;
   }
   .pcard,
