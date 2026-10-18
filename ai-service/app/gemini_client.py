@@ -20,9 +20,9 @@ class GeminiClient:
         payload = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {
-                "temperature": 0.1,
                 "responseMimeType": "application/json",
                 "responseJsonSchema": schema,
+                "thinkingConfig": {"thinkingLevel": "low"},
             },
         }
         text = await self._request(payload)
@@ -34,7 +34,10 @@ class GeminiClient:
     async def generate_text(self, prompt: str) -> str:
         payload = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 300},
+            "generationConfig": {
+                "maxOutputTokens": 1200,
+                "thinkingConfig": {"thinkingLevel": "low"},
+            },
         }
         return await self._request(payload)
 
@@ -52,7 +55,19 @@ class GeminiClient:
         except httpx.HTTPError as exc:
             raise GeminiError("Không thể kết nối Gemini API") from exc
         try:
-            return response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+            candidate = response.json()["candidates"][0]
+            if candidate.get("finishReason") == "MAX_TOKENS":
+                raise GeminiError("Gemini đã dùng hết giới hạn phản hồi")
+            parts = candidate["content"]["parts"]
+            answer_parts = [part["text"] for part in parts if part.get("text") and not part.get("thought", False)]
+            if not answer_parts:
+                answer_parts = [part["text"] for part in parts if part.get("text")]
+            answer = "".join(answer_parts).strip()
+            if not answer:
+                raise GeminiError("Gemini trả về nội dung rỗng")
+            return answer
+        except GeminiError:
+            raise
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise GeminiError("Gemini không trả về nội dung hợp lệ") from exc
 
