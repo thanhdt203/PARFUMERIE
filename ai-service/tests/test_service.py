@@ -63,3 +63,30 @@ def test_stream_endpoint_reports_gemini_error(monkeypatch):
     monkeypatch.setattr(main, "service", RecommendationService(FailingGemini()))
     text = TestClient(main.app).post("/recommend/stream", json={"message": "x", "products": []}).text
     assert "event: error" in text and "hết quota" in text
+
+
+def test_request_mode_defaults_to_basic_and_rejects_unknown_values():
+    import pytest
+    from pydantic import ValidationError
+
+    assert RecommendRequest(message="x", products=[]).mode == "basic"
+    assert RecommendRequest(message="x", products=[], mode="deep").mode == "deep"
+    with pytest.raises(ValidationError):
+        RecommendRequest(message="x", products=[], mode="admin")
+
+
+def test_stream_endpoint_passes_mode_to_advice(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app import main
+
+    seen = []
+
+    class ModeGemini(FakeGemini):
+        async def stream_text(self, prompt):
+            seen.append(prompt)
+            yield "ok"
+
+    monkeypatch.setattr(main, "service", RecommendationService(ModeGemini()))
+    body = {"message": "x", "mode": "deep", "products": [{"id": "p1", "name": "Eros", "gender": "nam", "scent_groups": ["woody"], "min_price": 1, "max_price": 2}]}
+    TestClient(main.app).post("/recommend/stream", json=body)
+    assert "tầng hương Đầu" in seen[0]

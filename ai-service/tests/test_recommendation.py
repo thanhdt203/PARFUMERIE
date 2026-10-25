@@ -81,3 +81,23 @@ def test_advice_prompt_without_match_suggests_loosening():
 
     prompt = advice_prompt("nam dưới 100k", Preferences(max_budget=100_000), [])
     assert "nới ngân sách" in prompt
+
+
+def test_deep_advice_prompt_splits_note_tiers_and_asks_for_tier_analysis():
+    from app.prompts import advice_prompt
+
+    item = product(top_notes=["cam bergamot"], middle_notes=["hoa nhài"], base_notes=["gỗ đàn hương"])
+    deep = advice_prompt("đi tiệc", Preferences(), [item], "deep")
+    assert '"top_notes": ["cam bergamot"]' in deep
+    assert '"base_notes": ["gỗ đàn hương"]' in deep
+    assert "tầng hương Đầu" in deep and "giỏ hàng" in deep
+
+
+def test_basic_advice_prompt_keeps_short_style_and_merged_notes():
+    from app.prompts import advice_prompt
+
+    item = product(top_notes=["cam bergamot"], base_notes=["gỗ đàn hương"])
+    basic = advice_prompt("đi tiệc", Preferences(), [item])
+    assert "tối đa 140 từ" in basic
+    assert '"notes": ["cam bergamot", "gỗ đàn hương"]' in basic
+    assert "top_notes" not in basic

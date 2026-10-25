@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, beforeEach, describe, it } from "node:test";
 import express from "express";
+import jwt from "jsonwebtoken";
+import HoiThoaiAI from "../src/models/HoiThoaiAI.js";
+import aiHistoryRoute from "../src/ai/aiHistoryRoute.js";
+import KhachHang from "../src/models/KhachHang.js";
+import NhanVien from "../src/models/NhanVien.js";
 import HinhAnh from "../src/models/HinhAnh.js";
 import SanPham from "../src/models/SanPham.js";
 import SanPhamDungTich from "../src/models/SanPhamDungTich.js";
@@ -246,5 +251,193 @@ describe("POST /api/ai/chat/stream", () => {
         aiHandler = async () => sseBody('event: delta\ndata: {"text": "x"}\n\n');
         const text = await (await postStream({ message: "hello" })).text();
         assert.ok(text.includes("event: error"));
+    });
+});
+
+describe("POST /api/ai/chat/stream modes", () => {
+    const enc = new TextEncoder();
+    const sseBody = (...chunks) => ({ ok: true, status: 200, body: (async function* () { for (const c of chunks) yield enc.encode(c); })() });
+    const productsThenDone = () => sseBody(`event: products\ndata: {"product_ids": ["${ID_A}"]}\n\n`, "event: done\ndata: {}\n\n");
+    const original2 = { kh: KhachHang.findById, nv: NhanVien.findById, secret: process.env.ACCESS_TOKEN_SECRET };
+    const token = (role) => jwt.sign({ userId: "u1", role }, "test-secret");
+    const postAs = (auth) => original.fetch(`${baseUrl}/api/ai/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(auth ? { Authorization: `Bearer ${auth}` } : {}) },
+        body: JSON.stringify({ message: "hello" }),
+    });
+
+    beforeEach(() => {
+        process.env.ACCESS_TOKEN_SECRET = "test-secret";
+        KhachHang.findById = () => ({ select: async () => ({ _id: "u1" }) });
+        NhanVien.findById = () => ({ select: async () => ({ _id: "u1", VaiTro: "staff" }) });
+        aiHandler = async () => productsThenDone();
+        SanPham.find = (filter) => query(
+            filter?._id
+                ? [product(ID_A, "A", { NotHuong: { Dau: ["cam"], Giua: [], Cuoi: ["gỗ"] } })]
+                : [product(ID_A, "A")]
+        );
+        SanPhamDungTich.find = () => query([
+            { _id: "v1", MaSP: ID_A, Gia: 900_000, SoLuongCo: 3, MaDungTich: { TenDungTich: "50ml" } },
+        ]);
+    });
+
+    afterEach(() => {
+        KhachHang.findById = original2.kh;
+        NhanVien.findById = original2.nv;
+        process.env.ACCESS_TOKEN_SECRET = original2.secret;
+    });
+
+    it("guest gets basic mode and plain product cards", async () => {
+        const text = await (await postAs(null)).text();
+        assert.ok(text.startsWith('event: mode\ndata: {"mode":"basic"}'));
+        assert.equal(aiCalls[0].body.mode, "basic");
+        assert.ok(!text.includes("BienThe") && !text.includes("NotHuong"));
+    });
+
+    it("logged-in customer gets deep mode with note tiers and cart-ready variants", async () => {
+        const text = await (await postAs(token("customer"))).text();
+        assert.ok(text.startsWith('event: mode\ndata: {"mode":"deep"}'));
+        assert.equal(aiCalls[0].body.mode, "deep");
+        assert.ok(text.includes('"NotHuong":{"Dau":["cam"],"Giua":[],"Cuoi":["gỗ"]}'));
+        assert.ok(text.includes('"BienThe":[{"_id":"v1","TenDungTich":"50ml","Gia":900000,"SoLuongCo":3,"ConHang":true}]'));
+    });
+
+    it("invalid token or staff account falls back to basic mode instead of failing", async () => {
+        for (const auth of ["not-a-jwt", token("staff")]) {
+            aiCalls.length = 0;
+            const res = await postAs(auth);
+            assert.equal(res.status, 200);
+            assert.equal(aiCalls[0].body.mode, "basic");
+            await res.text();
+        }
+    });
+});
+
+describe("AI conversation history", () => {
+    const enc = new TextEncoder();
+    const sseBody = (...chunks) => ({ ok: true, status: 200, body: (async function* () { for (const c of chunks) yield enc.encode(c); })() });
+    const saved = { kh: KhachHang.findById, secret: process.env.ACCESS_TOKEN_SECRET, create: HoiThoaiAI.create, upd: HoiThoaiAI.findOneAndUpdate };
+    const OID = "f".repeat(24);
+    let creates;
+    let updates;
+    const customerToken = () => jwt.sign({ userId: "u1", role: "customer" }, "test-secret");
+    const stream = (body, auth = customerToken()) => original.fetch(`${baseUrl}/api/ai/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(auth ? { Authorization: `Bearer ${auth}` } : {}) },
+        body: JSON.stringify({ message: "hello", ...body }),
+    });
+
+    beforeEach(() => {
+        process.env.ACCESS_TOKEN_SECRET = "test-secret";
+        KhachHang.findById = () => ({ select: async () => ({ _id: "u1" }) });
+        creates = [];
+        updates = [];
+        HoiThoaiAI.create = async (doc) => { creates.push(doc); return { _id: OID }; };
+        HoiThoaiAI.findOneAndUpdate = async (filter, update) => { updates.push({ filter, update }); return null; };
+        aiHandler = async () => sseBody(
+            `event: products\ndata: {"product_ids": ["${ID_A}"]}\n\n`,
+            'event: delta\ndata: {"text": "Xin "}\n\nevent: delta\ndata: {"text": "chào"}\n\n',
+            "event: done\ndata: {}\n\n",
+        );
+        SanPhamDungTich.find = () => query([{ _id: "v1", MaSP: ID_A, Gia: 1, SoLuongCo: 1, MaDungTich: { TenDungTich: "50ml" } }]);
+    });
+
+    afterEach(() => {
+        KhachHang.findById = saved.kh;
+        process.env.ACCESS_TOKEN_SECRET = saved.secret;
+        HoiThoaiAI.create = saved.create;
+        HoiThoaiAI.findOneAndUpdate = saved.upd;
+    });
+
+    it("saves a finished exchange of a logged-in customer into a new conversation", async () => {
+        const text = await (await stream({})).text();
+        assert.equal(creates.length, 1);
+        assert.equal(creates[0].MaKH, "u1");
+        assert.equal(creates[0].TieuDe, "hello");
+        assert.deepEqual(creates[0].TinNhan.map((m) => [m.VaiTro, m.NoiDung]), [["user", "hello"], ["assistant", "Xin chào"]]);
+        assert.deepEqual(creates[0].TinNhan[1].MaSanPham, [ID_A]);
+        assert.ok(text.indexOf("event: conversation") < text.indexOf("event: done"));
+        assert.ok(text.includes(`"id":"${OID}"`));
+    });
+
+    it("appends to an owned conversation and only creates a new one when it is not found", async () => {
+        HoiThoaiAI.findOneAndUpdate = async (filter, update) => { updates.push({ filter, update }); return { _id: OID }; };
+        const text = await (await stream({ conversationId: OID })).text();
+        assert.equal(creates.length, 0);
+        assert.equal(updates[0].filter.MaKH, "u1");
+        assert.equal(updates[0].update.$push.TinNhan.$each.length, 2);
+        assert.ok(text.includes(`"id":"${OID}"`));
+    });
+
+    it("ignores a malformed conversation id and does not save for guests or failed streams", async () => {
+        await (await stream({ conversationId: "not-an-id" })).text();
+        assert.equal(updates.length, 0);
+        assert.equal(creates.length, 1);
+
+        creates.length = 0;
+        await (await stream({}, null)).text();
+        assert.equal(creates.length, 0);
+
+        aiHandler = async () => sseBody('event: delta\ndata: {"text": "x"}\n\nevent: error\ndata: {"detail": "boom"}\n\n');
+        await (await stream({})).text();
+        assert.equal(creates.length, 0);
+    });
+
+    describe("history endpoints", () => {
+        let historyServer;
+        let historyUrl;
+        const found = { _id: OID, TieuDe: "t", TinNhan: [
+            { VaiTro: "user", NoiDung: "q" },
+            { VaiTro: "assistant", NoiDung: "a", MaSanPham: [ID_A, ID_MISSING] },
+        ] };
+        const origFind = { find: HoiThoaiAI.find, one: HoiThoaiAI.findOne, del: HoiThoaiAI.findOneAndDelete };
+        let lastFilter;
+
+        before(async () => {
+            const app = express();
+            app.use((req, res, next) => { req.user = { _id: "u1" }; next(); });
+            app.use("/api/me/ai", aiHistoryRoute);
+            await new Promise((resolve) => { historyServer = app.listen(0, "127.0.0.1", resolve); });
+            historyUrl = `http://127.0.0.1:${historyServer.address().port}/api/me/ai`;
+        });
+        after(() => new Promise((resolve) => historyServer.close(resolve)));
+        afterEach(() => {
+            HoiThoaiAI.find = origFind.find;
+            HoiThoaiAI.findOne = origFind.one;
+            HoiThoaiAI.findOneAndDelete = origFind.del;
+        });
+
+        it("lists only the caller's conversations", async () => {
+            HoiThoaiAI.find = (filter) => { lastFilter = filter; return query([{ _id: OID, TieuDe: "t" }]); };
+            const res = await original.fetch(`${historyUrl}/conversations`);
+            assert.equal(res.status, 200);
+            assert.deepEqual(lastFilter, { MaKH: "u1" });
+            assert.equal((await res.json()).data.length, 1);
+        });
+
+        it("returns messages with products rehydrated and drops products that no longer exist", async () => {
+            HoiThoaiAI.findOne = (filter) => { lastFilter = filter; return { lean: async () => found }; };
+            SanPham.find = () => query([product(ID_A, "A")]);
+            const body = await (await original.fetch(`${historyUrl}/conversations/${OID}`)).json();
+            assert.deepEqual(lastFilter, { _id: OID, MaKH: "u1" });
+            assert.deepEqual(body.messages.map((m) => m.role), ["user", "assistant"]);
+            assert.deepEqual(body.messages[1].products.map((p) => p.TenSP), ["A"]);
+            assert.ok(body.messages[1].products[0].BienThe.length === 1);
+        });
+
+        it("returns 404 for someone else's conversation, 400 for a bad id", async () => {
+            HoiThoaiAI.findOne = () => ({ lean: async () => null });
+            assert.equal((await original.fetch(`${historyUrl}/conversations/${OID}`)).status, 404);
+            assert.equal((await original.fetch(`${historyUrl}/conversations/abc`)).status, 400);
+        });
+
+        it("deletes only the caller's conversation", async () => {
+            HoiThoaiAI.findOneAndDelete = async (filter) => { lastFilter = filter; return found; };
+            const res = await original.fetch(`${historyUrl}/conversations/${OID}`, { method: "DELETE" });
+            assert.equal(res.status, 200);
+            assert.deepEqual(lastFilter, { _id: OID, MaKH: "u1" });
+            HoiThoaiAI.findOneAndDelete = async () => null;
+            assert.equal((await original.fetch(`${historyUrl}/conversations/${OID}`, { method: "DELETE" })).status, 404);
+        });
     });
 });

@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 
 from .gemini_client import GeminiClient
 from .prompts import PREFERENCE_SCHEMA, advice_prompt, preference_prompt
-from .schemas import Preferences, Product, RecommendRequest, RecommendResponse
+from .schemas import Mode, Preferences, Product, RecommendRequest, RecommendResponse
 
 
 CONTEXT_KEYWORDS = {
@@ -78,12 +78,14 @@ class RecommendationService:
         preferences = Preferences.model_validate(raw_preferences)
         return preferences, rank_products(request.products, preferences)
 
-    def stream_advice(self, message: str, preferences: Preferences, selected: list[Product]) -> AsyncIterator[str]:
-        return self.gemini.stream_text(advice_prompt(message, preferences, selected))
+    def stream_advice(
+        self, message: str, preferences: Preferences, selected: list[Product], mode: Mode = "basic"
+    ) -> AsyncIterator[str]:
+        return self.gemini.stream_text(advice_prompt(message, preferences, selected, mode))
 
     async def recommend(self, request: RecommendRequest) -> RecommendResponse:
         preferences, selected = await self.select(request)
-        reply = await self.gemini.generate_text(advice_prompt(request.message, preferences, selected))
+        reply = await self.gemini.generate_text(advice_prompt(request.message, preferences, selected, request.mode))
         return RecommendResponse(
             reply=reply,
             product_ids=[product.id for product in selected],

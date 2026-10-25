@@ -1,17 +1,30 @@
-import api from '../lib/api';
+import api, { getAccessToken } from '../lib/api';
 import { shopService } from './shopService';
-import type { ChatMessage, ProductCardData } from '../types/shop';
+import type { AiProductCardData, ChatMessage, ProductVariantView } from '../types/shop';
 import { mockDelay, USE_MOCK } from './config';
 
 export interface AiReply {
   reply: string;
   /** Sản phẩm AI gợi ý (có thể không có) */
-  products?: ProductCardData[];
+  products?: AiProductCardData[];
+}
+
+export interface AiConversationSummary {
+  _id: string;
+  TieuDe: string;
+  updatedAt: string;
+}
+
+export interface AiConversation {
+  _id: string;
+  messages: { role: 'user' | 'assistant'; text: string; products?: AiProductCardData[] }[];
 }
 
 export interface AiStreamHandlers {
+  /** Id hội thoại đã lưu (chỉ khách đã đăng nhập) */
+  onConversation?(id: string): void;
   /** Sản phẩm gợi ý — đến trước phần chữ */
-  onProducts(products: ProductCardData[]): void;
+  onProducts(products: AiProductCardData[]): void;
   /** Một đoạn chữ của câu trả lời */
   onDelta(text: string): void;
 }
@@ -20,7 +33,17 @@ export interface AiService {
   /** Gửi câu hỏi kèm lịch sử chat; trả về câu trả lời của AI */
   ask(message: string, history: ChatMessage[]): Promise<AiReply>;
   /** Như ask nhưng trả lời dần qua handlers; reject nếu lỗi, resolve khi AI trả lời xong */
-  askStream(message: string, history: ChatMessage[], handlers: AiStreamHandlers, signal?: AbortSignal): Promise<void>;
+  askStream(
+    message: string,
+    history: ChatMessage[],
+    handlers: AiStreamHandlers,
+    signal?: AbortSignal,
+    conversationId?: string | null
+  ): Promise<void>;
+  /** Lịch sử hội thoại đã lưu của khách hàng đăng nhập */
+  listConversations(): Promise<AiConversationSummary[]>;
+  getConversation(id: string): Promise<AiConversation>;
+  deleteConversation(id: string): Promise<void>;
 }
 
 // Mock: chưa có AI thật nên trả lời mẫu + vài sản phẩm bất kỳ để xem giao diện
@@ -34,6 +57,13 @@ const mockService: AiService = {
       products: all.slice(start, start + 3),
     };
   },
+  async listConversations() {
+    return [];
+  },
+  async getConversation(id) {
+    return { _id: id, messages: [] };
+  },
+  async deleteConversation() {},
   async askStream(message, history, handlers, signal) {
     const res = await this.ask(message, history);
     if (res.products) handlers.onProducts(res.products);
@@ -59,22 +89,29 @@ interface ApiAiProduct {
   GiaCaoNhat: number;
   AnhChinh: string | null;
   ThuongHieu?: { TenTH: string } | null;
+  /** Chỉ có ở chế độ chuyên sâu */
+  NotHuong?: { Dau: string[]; Giua: string[]; Cuoi: string[] };
+  BienThe?: ProductVariantView[];
 }
 
 const toHistory = (history: ChatMessage[]) => history.map((m) => ({ role: m.role, content: m.text }));
 
-const toProductCard = (sp: ApiAiProduct): ProductCardData => ({
+const toProductCard = (sp: ApiAiProduct): AiProductCardData => ({
   _id: sp._id,
   TenSP: sp.TenSP,
   TenThuongHieu: sp.ThuongHieu?.TenTH ?? '',
   GiaThapNhat: sp.GiaThapNhat,
   GiaCaoNhat: sp.GiaCaoNhat,
   AnhChinh: sp.AnhChinh,
+  NotHuong: sp.NotHuong,
+  BienThe: sp.BienThe,
 });
 
 /**
  * Streaming (SSE qua POST nên không dùng EventSource):
  *   POST /api/ai/chat/stream, cùng body với /ai/chat
+ *   event conversation: { id }                   (khách đã đăng nhập: hội thoại đã lưu, trước done)
+ *   event mode:     { mode: 'basic' | 'deep' }   (deep khi gửi kèm token khách hàng)
  *   event products: { products: [...] }   (một lần, trước phần chữ)
  *   event delta:    { text: string }      (nhiều lần)
  *   event done:     {}
@@ -100,7 +137,8 @@ async function readSseStream(res: Response, handlers: AiStreamHandlers): Promise
         else if (line.startsWith('data:')) data += line.slice(5).trim();
       }
       const payload = data ? JSON.parse(data) : {};
-      if (event === 'products') handlers.onProducts((payload.products as ApiAiProduct[]).map(toProductCard));
+      if (event === 'conversation') handlers.onConversation?.(String(payload.id));
+      else if (event === 'products') handlers.onProducts((payload.products as ApiAiProduct[]).map(toProductCard));
       else if (event === 'delta') handlers.onDelta(String(payload.text ?? ''));
       else if (event === 'error') throw new Error(payload.message || 'Trợ lý AI tạm thời chưa sẵn sàng.');
       else if (event === 'done') return;
@@ -117,13 +155,34 @@ const apiService: AiService = {
     });
     return { reply: data.reply, products: data.products?.map(toProductCard) };
   },
-  async askStream(message, history, handlers, signal) {
+  async listConversations() {
+    const { data } = await api.get<{ data: AiConversationSummary[] }>('/me/ai/conversations');
+    return data.data;
+  },
+  async getConversation(id) {
+    const { data } = await api.get<{
+      _id: string;
+      messages: { role: 'user' | 'assistant'; text: string; products?: ApiAiProduct[] }[];
+    }>(`/me/ai/conversations/${id}`);
+    return {
+      _id: data._id,
+      messages: data.messages.map((m) => ({ ...m, products: m.products?.map(toProductCard) })),
+    };
+  },
+  async deleteConversation(id) {
+    await api.delete(`/me/ai/conversations/${id}`);
+  },
+  async askStream(message, history, handlers, signal, conversationId) {
     let res: Response;
     try {
       res = await fetch(`${import.meta.env.VITE_API_URL}/ai/chat/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, history: toHistory(history) }),
+        headers: {
+          'Content-Type': 'application/json',
+          // có token -> backend bật chế độ tư vấn chuyên sâu cho khách hàng
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
+        body: JSON.stringify({ message, history: toHistory(history), conversationId: conversationId ?? undefined }),
         signal,
       });
     } catch (err) {

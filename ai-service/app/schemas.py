@@ -37,7 +37,11 @@ class Product(BaseModel):
     variants: list[Variant] = Field(default_factory=list, max_length=10)
 
 
+Mode = Literal["basic", "deep"]
+
+
 class RecommendRequest(BaseModel):
+    mode: Mode = "basic"
     message: str = Field(min_length=1, max_length=300)
     history: list[ChatMessage] = Field(default_factory=list, max_length=10)
     products: list[Product] = Field(max_length=100)

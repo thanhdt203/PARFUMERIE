@@ -18,6 +18,7 @@ import adminVoucherRoute from './routers/adminVoucherRoute.js';
 import adminCustomerRoute from './routers/adminCustomerRoute.js';
 import adminInventoryRoute from './routers/adminInventoryRoute.js';
 import aiRoute from './ai/aiRoute.js';
+import aiHistoryRoute from './ai/aiHistoryRoute.js';
 import { protectedRoute, authorize } from "./middlewares/authMiddleware.js";
 
 dotenv.config()
@@ -41,6 +42,7 @@ app.use(protectedRoute);
 app.use('/api/me/cart', authorize('customer'), gioHangRoute);
 app.use('/api/me/orders', authorize('customer'), customerOrderRoute);
 app.use('/api/me/wishlist', authorize('customer'), wishlistRoute);
+app.use('/api/me/ai', authorize('customer'), aiHistoryRoute);
 app.use('/api/me', meRoute);
 app.use('/api/khachhangs', authorize('customer'), khachHangRoute);
 app.use('/api/admin/products', authorize('staff', 'admin'), adminProductRoute);

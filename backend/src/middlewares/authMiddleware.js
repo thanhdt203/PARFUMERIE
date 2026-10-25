@@ -40,3 +40,23 @@ export const authorize = (...roles) => (req, res, next) => {
     }
     next();
 };
+
+// Không bắt buộc đăng nhập: có token hợp lệ thì gắn req.user/req.role, ngược lại coi như khách vãng lai
+export const optionalAuth = (req, res, next) => {
+    const token = req.headers["authorization"]?.split(" ")[1];
+    if (!token) return next();
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
+        if (err) return next();
+        try {
+            const Model = decoded.role === 'customer' ? KhachHang : NhanVien;
+            const user = await Model.findById(decoded.userId).select('-MatKhau');
+            if (user) {
+                req.user = user;
+                req.role = decoded.role === 'customer' ? 'customer' : user.VaiTro;
+            }
+        } catch (error) {
+            console.error('Lỗi trong optionalAuth', error);
+        }
+        next();
+    });
+};

@@ -1,6 +1,6 @@
 import json
 
-from .schemas import Preferences, Product
+from .schemas import Mode, Preferences, Product
 
 
 PREFERENCE_SCHEMA = {
@@ -41,7 +41,7 @@ Hội thoại:
 {json.dumps(conversation, ensure_ascii=False)}"""
 
 
-def advice_prompt(message: str, preferences: Preferences, products: list[Product]) -> str:
+def advice_prompt(message: str, preferences: Preferences, products: list[Product], mode: Mode = "basic") -> str:
     budget = preferences.max_budget
     compact_products = [{
         "name": item.name,
@@ -49,7 +49,11 @@ def advice_prompt(message: str, preferences: Preferences, products: list[Product
         "description": item.description,
         "gender": item.gender,
         "scent_groups": item.scent_groups,
-        "notes": item.top_notes + item.middle_notes + item.base_notes,
+        **(
+            {"top_notes": item.top_notes, "middle_notes": item.middle_notes, "base_notes": item.base_notes}
+            if mode == "deep"
+            else {"notes": item.top_notes + item.middle_notes + item.base_notes}
+        ),
         "min_price": item.min_price,
         "max_price": item.max_price,
         "variants": [variant.model_dump() for variant in item.variants],
@@ -57,6 +61,18 @@ def advice_prompt(message: str, preferences: Preferences, products: list[Product
             variant.model_dump() for variant in item.variants if budget is None or variant.price <= budget
         ],
     } for item in products]
+    if mode == "deep":
+        style_rule = (
+            "Viết câu trả lời tiếng Việt tự nhiên, lịch sự (tối đa 220 từ) cho khách hàng đã đăng nhập, đi sâu hơn tư vấn thông thường.\n"
+            "Với mỗi sản phẩm: nêu tầng hương Đầu (top), Giữa (heart) và Cuối (base) theo đúng dữ liệu (tầng nào không có dữ liệu thì bỏ qua, "
+            "không tự thêm nốt hương), rồi giải thích hương thay đổi theo thời gian ra sao và vì sao hợp với gu, dịp dùng hoặc phong cách người dùng nêu. "
+            "Cuối cùng gợi ý người dùng chọn dung tích ở thẻ sản phẩm bên dưới để thêm vào giỏ hàng."
+        )
+    else:
+        style_rule = (
+            "Viết một câu trả lời tiếng Việt tự nhiên, ngắn gọn (tối đa 140 từ), lịch sự và hữu ích.\n"
+            "Giải thích vì sao các sản phẩm được chọn phù hợp với nhu cầu."
+        )
     if products:
         empty_rule = ""
     elif preferences.wants_products:
@@ -68,8 +84,8 @@ def advice_prompt(message: str, preferences: Preferences, products: list[Product
             "rồi mời họ mô tả dịp dùng, mùi hương hoặc ngân sách để được gợi ý."
         )
     return f"""Bạn là chuyên viên tư vấn nước hoa của Parfumerie.
-Viết một câu trả lời tiếng Việt tự nhiên, ngắn gọn (tối đa 140 từ), lịch sự và hữu ích.
-Giải thích vì sao các sản phẩm được chọn phù hợp với nhu cầu. Chỉ sử dụng dữ liệu được cung cấp; không bịa độ lưu hương, nồng độ, giá hoặc đặc tính khác.
+{style_rule}
+Chỉ sử dụng dữ liệu được cung cấp; không bịa độ lưu hương, nồng độ, giá hoặc đặc tính khác.
 Giá trong dữ liệu là giá theo từng dung tích (variants). Khi nêu giá, luôn kèm dung tích; nếu người dùng có ngân sách, chỉ nêu các dung tích trong variants_within_budget và nói rõ các dung tích lớn hơn có giá cao hơn ngân sách.
 {empty_rule}
 

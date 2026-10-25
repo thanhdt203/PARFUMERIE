@@ -41,11 +41,31 @@ const buildCatalog = async () => {
         });
 };
 
-const hydrateProducts = async (ids) => {
+// Chế độ chuyên sâu: thêm tầng hương và các dung tích còn hàng (kèm _id để thêm vào giỏ)
+const loadDeepDetails = async (ids) => {
+    const variants = await SanPhamDungTich.find({ MaSP: { $in: ids }, SoLuongCo: { $gt: 0 } })
+        .populate("MaDungTich", "TenDungTich").sort({ Gia: 1 }).lean();
+    const byProduct = new Map();
+    for (const variant of variants) {
+        const key = String(variant.MaSP);
+        if (!byProduct.has(key)) byProduct.set(key, []);
+        byProduct.get(key).push({
+            _id: variant._id,
+            TenDungTich: variant.MaDungTich?.TenDungTich ?? "",
+            Gia: variant.Gia,
+            SoLuongCo: variant.SoLuongCo,
+            ConHang: true,
+        });
+    }
+    return byProduct;
+};
+
+export const hydrateProducts = async (ids, mode = "basic") => {
     if (!ids.length) return [];
-    const [products, images] = await Promise.all([
+    const [products, images, deep] = await Promise.all([
         SanPham.find({ _id: { $in: ids }, DaAn: false }).populate("MaTH", "TenTH").lean(),
         HinhAnh.find({ MaSP: { $in: ids } }).sort({ LaAnhChinh: -1, ThuTu: 1 }).lean(),
+        mode === "deep" ? loadDeepDetails(ids) : null,
     ]);
     const imageByProduct = new Map();
     for (const image of images) {
@@ -63,6 +83,14 @@ const hydrateProducts = async (ids) => {
             GiaCaoNhat: product.GiaCaoNhat,
             AnhChinh: imageByProduct.get(id) ?? null,
             ThuongHieu: product.MaTH,
+            ...(deep && {
+                NotHuong: {
+                    Dau: product.NotHuong?.Dau ?? [],
+                    Giua: product.NotHuong?.Giua ?? [],
+                    Cuoi: product.NotHuong?.Cuoi ?? [],
+                },
+                BienThe: deep.get(id) ?? [],
+            }),
         }];
     });
 };
@@ -119,7 +147,7 @@ const parseSseEvent = (block) => {
 
 // Chuyển tiếp luồng SSE của ai-service; send(event, data) được gọi cho từng sự kiện.
 // Timeout tính theo khoảng im lặng giữa hai đoạn dữ liệu, không tính tổng thời gian.
-export const streamAi = async ({ message, history, signal }, send) => {
+export const streamAi = async ({ message, history, mode = "basic", signal }, send) => {
     const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
     const aiTimeoutMs = Number(process.env.AI_TIMEOUT_MS || 20000);
     const catalog = await buildCatalog();
@@ -137,7 +165,7 @@ export const streamAi = async ({ message, history, signal }, send) => {
         const response = await fetch(`${aiServiceUrl}/recommend/stream`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, history, products: catalog }),
+            body: JSON.stringify({ message, history, mode, products: catalog }),
             signal: controller.signal,
         });
         if (!response.ok || !response.body) throw new Error("AI_UNAVAILABLE");
@@ -155,13 +183,13 @@ export const streamAi = async ({ message, history, signal }, send) => {
                     const ids = Array.isArray(parsed.data.product_ids)
                         ? parsed.data.product_ids.filter((id) => /^[0-9a-fA-F]{24}$/.test(id)).slice(0, 3)
                         : [];
-                    send("products", { products: await hydrateProducts(ids) });
+                    await send("products", { products: await hydrateProducts(ids, mode) });
                 } else if (parsed.event === "delta") {
-                    send("delta", { text: String(parsed.data.text ?? "") });
+                    await send("delta", { text: String(parsed.data.text ?? "") });
                 } else if (parsed.event === "error") {
                     throw new Error(parsed.data.detail || "AI_UNAVAILABLE");
                 } else if (parsed.event === "done") {
-                    send("done", {});
+                    await send("done", {});
                     return;
                 }
             }
