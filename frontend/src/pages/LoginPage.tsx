@@ -26,7 +26,7 @@ export default function LoginPage() {
     setError('');
 
     if (!taiKhoan.trim() || !matKhau) {
-      setError('Nhập email hoặc tên đăng nhập và mật khẩu.');
+      setError('Nhập email và mật khẩu.');
       return;
     }
 
@@ -41,13 +41,13 @@ export default function LoginPage() {
   };
 
   return (
-    <SiteLayout crumb="Đăng nhập tài khoản">
-      <AuthCard title="Đăng nhập tài khoản" subtitle="Nếu bạn đã có tài khoản, đăng nhập tại đây.">
+    <SiteLayout crumb="Đăng nhập">
+      <AuthCard title="Đăng nhập" subtitle="Chào mừng bạn quay lại Parfumerie.">
         <form onSubmit={handleSubmit} noValidate>
           <Field
             id="tai-khoan"
-            label="Email / Tên đăng nhập"
-            placeholder="Email hoặc tên đăng nhập"
+            label="Email"
+            placeholder="Nhập email"
             autoComplete="username"
             value={taiKhoan}
             onChange={setTaiKhoan}
@@ -58,13 +58,19 @@ export default function LoginPage() {
             id="mat-khau"
             label="Mật khẩu"
             type="password"
-            placeholder="Mật khẩu"
+            placeholder="Nhập mật khẩu"
             autoComplete="current-password"
             value={matKhau}
             onChange={setMatKhau}
             invalid={!!error}
             disabled={submitting}
           />
+
+          <p className="auth-forgot">
+            <Link className="auth-link" to="/quen-mat-khau">
+              Quên mật khẩu?
+            </Link>
+          </p>
 
           {justRegistered && !error && (
             <p className="auth-msg auth-msg--ok" role="status">
@@ -83,10 +89,7 @@ export default function LoginPage() {
         </form>
 
         <p className="auth-extra">
-          Bạn chưa có tài khoản. <Link className="auth-link" to="/register">Đăng ký tại đây.</Link>
-        </p>
-        <p className="auth-extra">
-          <Link className="auth-link" to="/quen-mat-khau">Quên mật khẩu?</Link>
+          Chưa có tài khoản? <Link className="auth-link" to="/register">Đăng ký</Link>
         </p>
       </AuthCard>
     </SiteLayout>

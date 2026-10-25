@@ -2,6 +2,7 @@ import { Heart } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { CSSProperties } from 'react';
+import { useWishlistToggle } from '../../hooks/useWishlistToggle';
 import { formatNumber } from '../../lib/format';
 import type { ProductCardData } from '../../types/shop';
 import './ProductCard.css';
@@ -47,41 +48,51 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { TenSP, TenThuongHieu, AnhChinh, GiaThapNhat, GiaCaoNhat } = product;
   const [imgFailed, setImgFailed] = useState(false);
   const showImage = Boolean(AnhChinh) && !imgFailed;
+  const { liked, busy, toggle } = useWishlistToggle(product._id);
 
+  // Thẻ là <div>: vùng bấm xem chi tiết là <Link>, nút tim là <button> riêng (không đặt nút trong thẻ <a>)
   return (
-    <Link
-      to={`/nuoc-hoa/${product._id}`}
-      className="pcard"
-      style={{ '--i': Math.min(index, 8) } as CSSProperties}
-      aria-label={`${TenThuongHieu} ${TenSP}`}
-      draggable={false}
-    >
-      <span className="pcard__heart" aria-hidden="true">
-        <Heart size={19} strokeWidth={1.8} />
-      </span>
+    <div className="pcard" style={{ '--i': Math.min(index, 8) } as CSSProperties}>
+      <Link
+        to={`/nuoc-hoa/${product._id}`}
+        className="pcard__link"
+        aria-label={`${TenThuongHieu} ${TenSP}`}
+        draggable={false}
+      >
+        <div className="pcard__media">
+          {showImage ? (
+            <img
+              src={AnhChinh ?? undefined}
+              alt={TenSP}
+              loading="lazy"
+              draggable={false}
+              onError={() => setImgFailed(true)}
+            />
+          ) : (
+            <BottlePlaceholder />
+          )}
+        </div>
 
-      <div className="pcard__media">
-        {showImage ? (
-          <img
-            src={AnhChinh ?? undefined}
-            alt={TenSP}
-            loading="lazy"
-            draggable={false}
-            onError={() => setImgFailed(true)}
-          />
-        ) : (
-          <BottlePlaceholder />
-        )}
-      </div>
+        <div className="pcard__body">
+          <p className="pcard__brand">{TenThuongHieu}</p>
+          <h3 className="pcard__name">{TenSP}</h3>
+          <p className="pcard__price">
+            {formatNumber(GiaThapNhat)}
+            <span className="pcard__cur">₫</span>
+          </p>
+        </div>
+      </Link>
 
-      <div className="pcard__body">
-        <p className="pcard__brand">{TenThuongHieu}</p>
-        <h3 className="pcard__name">{TenSP}</h3>
-        <p className="pcard__price">
-          {formatNumber(GiaThapNhat)}
-          <span className="pcard__cur">₫</span>
-        </p>
-      </div>
-    </Link>
+      <button
+        type="button"
+        className="pcard__heart"
+        aria-pressed={liked}
+        aria-label={liked ? `Bỏ ${TenSP} khỏi yêu thích` : `Thêm ${TenSP} vào yêu thích`}
+        disabled={busy}
+        onClick={() => void toggle()}
+      >
+        <Heart size={19} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    </div>
   );
 }

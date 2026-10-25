@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { Heart, LayoutDashboard, LogOut, Package, ShoppingCart, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCartStore } from '../store/cartStore';
+import { useWishlistStore } from '../store/wishlistStore';
 import { useDismiss } from '../hooks/useDismiss';
 import { getDisplayName, getInitials } from '../lib/user';
 
 interface SiteHeaderActionsProps {
-  /** Số sản phẩm yêu thích, chưa có API nên mặc định 0 (ẩn badge) */
+  /** Ghi đè số yêu thích; bỏ trống thì lấy từ danh sách yêu thích của tài khoản */
   wishlistCount?: number;
 }
 
@@ -101,8 +102,10 @@ function AccountButton() {
   );
 }
 
-export default function SiteHeaderActions({ wishlistCount = 0 }: SiteHeaderActionsProps) {
+export default function SiteHeaderActions({ wishlistCount: wishlistOverride }: SiteHeaderActionsProps) {
   const cartCount = useCartStore((state) => state.tongSoLuong);
+  const storedWishlistCount = useWishlistStore((state) => state.items.length);
+  const wishlistCount = wishlistOverride ?? storedWishlistCount;
 
   return (
     <div className="site__actions">
