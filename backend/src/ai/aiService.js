@@ -11,25 +11,34 @@ const buildCatalog = async () => {
         .lean();
     const ids = products.map((product) => product._id);
     const variants = await SanPhamDungTich.find(
-        { MaSP: { $in: ids }, SoLuongCo: { $gt: 0 } }, "MaSP Gia"
-    ).lean();
-    const availableIds = new Set(variants.map((variant) => String(variant.MaSP)));
+        { MaSP: { $in: ids }, SoLuongCo: { $gt: 0 } }, "MaSP MaDungTich Gia"
+    ).populate("MaDungTich", "TenDungTich").sort({ Gia: 1 }).lean();
+    const variantsByProduct = new Map();
+    for (const variant of variants) {
+        const key = String(variant.MaSP);
+        if (!variantsByProduct.has(key)) variantsByProduct.set(key, []);
+        variantsByProduct.get(key).push({ size: variant.MaDungTich?.TenDungTich ?? "", price: variant.Gia });
+    }
     return products
-        .filter((product) => availableIds.has(String(product._id)))
-        .map((product) => ({
-            id: String(product._id),
-            name: product.TenSP,
-            brand: product.MaTH?.TenTH ?? "",
-            description: product.MoTa,
-            details: product.ThongTinChiTiet,
-            gender: product.GioiTinh,
-            scent_groups: product.NhomHuong,
-            top_notes: product.NotHuong?.Dau ?? [],
-            middle_notes: product.NotHuong?.Giua ?? [],
-            base_notes: product.NotHuong?.Cuoi ?? [],
-            min_price: product.GiaThapNhat,
-            max_price: product.GiaCaoNhat,
-        }));
+        .filter((product) => variantsByProduct.has(String(product._id)))
+        .map((product) => {
+            const inStock = variantsByProduct.get(String(product._id));
+            return {
+                id: String(product._id),
+                name: product.TenSP,
+                brand: product.MaTH?.TenTH ?? "",
+                description: product.MoTa,
+                details: product.ThongTinChiTiet,
+                gender: product.GioiTinh,
+                scent_groups: product.NhomHuong,
+                top_notes: product.NotHuong?.Dau ?? [],
+                middle_notes: product.NotHuong?.Giua ?? [],
+                base_notes: product.NotHuong?.Cuoi ?? [],
+                min_price: inStock[0].price,
+                max_price: inStock[inStock.length - 1].price,
+                variants: inStock,
+            };
+        });
 };
 
 const hydrateProducts = async (ids) => {
@@ -93,3 +102,78 @@ export const askAi = async ({ message, history }) => {
     };
 };
 
+
+const parseSseEvent = (block) => {
+    let event = "message";
+    const data = [];
+    for (const line of block.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) data.push(line.slice(5).trim());
+    }
+    try {
+        return { event, data: JSON.parse(data.join("\n") || "{}") };
+    } catch {
+        return null;
+    }
+};
+
+// Chuyển tiếp luồng SSE của ai-service; send(event, data) được gọi cho từng sự kiện.
+// Timeout tính theo khoảng im lặng giữa hai đoạn dữ liệu, không tính tổng thời gian.
+export const streamAi = async ({ message, history, signal }, send) => {
+    const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+    const aiTimeoutMs = Number(process.env.AI_TIMEOUT_MS || 20000);
+    const catalog = await buildCatalog();
+    const controller = new AbortController();
+    const onClientAbort = () => controller.abort();
+    signal?.addEventListener("abort", onClientAbort);
+    let timedOut = false;
+    let timer;
+    const armTimer = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { timedOut = true; controller.abort(); }, aiTimeoutMs);
+    };
+    try {
+        armTimer();
+        const response = await fetch(`${aiServiceUrl}/recommend/stream`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message, history, products: catalog }),
+            signal: controller.signal,
+        });
+        if (!response.ok || !response.body) throw new Error("AI_UNAVAILABLE");
+        const decoder = new TextDecoder();
+        let buffer = "";
+        for await (const chunk of response.body) {
+            armTimer();
+            buffer += decoder.decode(chunk, { stream: true }).replace(/\r\n/g, "\n");
+            let end;
+            while ((end = buffer.indexOf("\n\n")) !== -1) {
+                const parsed = parseSseEvent(buffer.slice(0, end));
+                buffer = buffer.slice(end + 2);
+                if (!parsed) continue;
+                if (parsed.event === "products") {
+                    const ids = Array.isArray(parsed.data.product_ids)
+                        ? parsed.data.product_ids.filter((id) => /^[0-9a-fA-F]{24}$/.test(id)).slice(0, 3)
+                        : [];
+                    send("products", { products: await hydrateProducts(ids) });
+                } else if (parsed.event === "delta") {
+                    send("delta", { text: String(parsed.data.text ?? "") });
+                } else if (parsed.event === "error") {
+                    throw new Error(parsed.data.detail || "AI_UNAVAILABLE");
+                } else if (parsed.event === "done") {
+                    send("done", {});
+                    return;
+                }
+            }
+        }
+        throw new Error("AI_UNAVAILABLE");
+    } catch (error) {
+        if (signal?.aborted) return;
+        if (timedOut) throw new Error("AI_TIMEOUT");
+        throw error;
+    } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onClientAbort);
+        controller.abort();
+    }
+};

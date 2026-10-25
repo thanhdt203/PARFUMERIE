@@ -1,4 +1,7 @@
+import json
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 
 from .config import settings
@@ -28,6 +31,27 @@ async def recommend(request: RecommendRequest) -> RecommendResponse:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValidationError as exc:
         raise HTTPException(status_code=503, detail="Gemini trả về tiêu chí không hợp lệ") from exc
+
+
+def sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+@app.post("/recommend/stream")
+async def recommend_stream(request: RecommendRequest) -> StreamingResponse:
+    async def events():
+        try:
+            preferences, selected = await service.select(request)
+            yield sse("products", {"product_ids": [product.id for product in selected]})
+            async for text in service.stream_advice(request.message, preferences, selected):
+                yield sse("delta", {"text": text})
+            yield sse("done", {})
+        except GeminiError as exc:
+            yield sse("error", {"detail": str(exc)})
+        except ValidationError:
+            yield sse("error", {"detail": "Gemini trả về tiêu chí không hợp lệ"})
+
+    return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import unicodedata
+from collections.abc import AsyncIterator
 
 from .gemini_client import GeminiClient
 from .prompts import PREFERENCE_SCHEMA, advice_prompt, preference_prompt
@@ -47,16 +48,19 @@ def score_product(product: Product, preferences: Preferences) -> float | None:
     for keyword, groups in CONTEXT_KEYWORDS.items():
         if normalize(keyword) in normalized_context:
             score += 1.5 * len(set(groups) & product_groups)
-    if preferences.max_budget:
+    # Ngân sách chỉ để phá hòa giữa các sản phẩm đã khớp, không tự nó làm sản phẩm "phù hợp"
+    if score > 0 and preferences.max_budget:
         score += max(0, 1 - product.min_price / preferences.max_budget)
     return score
 
 
 def rank_products(products: list[Product], preferences: Preferences, limit: int = 3) -> list[Product]:
+    if not preferences.wants_products:
+        return []
     ranked = []
     for product in products:
         score = score_product(product, preferences)
-        if score is not None:
+        if score:
             ranked.append((score, product.min_price, product.name, product))
     ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
     return [item[3] for item in ranked[:limit]]
@@ -66,13 +70,19 @@ class RecommendationService:
     def __init__(self, gemini: GeminiClient):
         self.gemini = gemini
 
-    async def recommend(self, request: RecommendRequest) -> RecommendResponse:
+    async def select(self, request: RecommendRequest) -> tuple[Preferences, list[Product]]:
         history = [message.model_dump() for message in request.history]
         raw_preferences = await self.gemini.generate_json(
             preference_prompt(request.message, history), PREFERENCE_SCHEMA
         )
         preferences = Preferences.model_validate(raw_preferences)
-        selected = rank_products(request.products, preferences)
+        return preferences, rank_products(request.products, preferences)
+
+    def stream_advice(self, message: str, preferences: Preferences, selected: list[Product]) -> AsyncIterator[str]:
+        return self.gemini.stream_text(advice_prompt(message, preferences, selected))
+
+    async def recommend(self, request: RecommendRequest) -> RecommendResponse:
+        preferences, selected = await self.select(request)
         reply = await self.gemini.generate_text(advice_prompt(request.message, preferences, selected))
         return RecommendResponse(
             reply=reply,

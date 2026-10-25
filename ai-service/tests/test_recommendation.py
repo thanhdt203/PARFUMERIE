@@ -31,5 +31,53 @@ def test_ranks_matching_group_and_note_first():
 
 def test_returns_at_most_three_products():
     products = [product(id=str(index), name=f"P{index}") for index in range(5)]
-    assert len(rank_products(products, Preferences())) == 3
+    assert len(rank_products(products, Preferences(scent_groups=["woody"]))) == 3
 
+
+def test_returns_nothing_when_no_criterion_matches():
+    products = [product(id="a"), product(id="b", scent_groups=["fresh"], base_notes=[])]
+    assert rank_products(products, Preferences()) == []
+    assert rank_products(products, Preferences(max_budget=5_000_000)) == []
+    assert [item.id for item in rank_products(products, Preferences(scent_groups=["fresh"]))] == ["b"]
+
+
+def test_returns_nothing_when_user_does_not_want_products():
+    prefs = Preferences(gender="nam", scent_groups=["woody"], wants_products=False)
+    assert rank_products([product()], prefs) == []
+
+
+def test_budget_breaks_ties_between_matching_products():
+    prefs = Preferences(scent_groups=["woody"], max_budget=3_000_000)
+    cheap = product(id="cheap", min_price=1_000_000)
+    pricey = product(id="pricey", min_price=2_500_000)
+    assert [item.id for item in rank_products([pricey, cheap], prefs)] == ["cheap", "pricey"]
+
+
+
+def test_advice_prompt_lists_only_variants_within_budget():
+    from app.prompts import advice_prompt
+
+    item = product(
+        name="Sauvage", min_price=1_900_000, max_price=3_200_000,
+        variants=[{"size": "50ml", "price": 1_900_000}, {"size": "100ml", "price": 3_200_000}],
+    )
+    prompt = advice_prompt("dưới 2 triệu", Preferences(max_budget=2_000_000), [item])
+    within = prompt.split('"variants_within_budget": ')[1].split("}]")[0]
+    assert "50ml" in within
+    assert "100ml" not in within
+    assert '"size": "100ml"' in prompt  # full list is still provided for context
+
+
+def test_advice_prompt_for_general_question_does_not_ask_to_loosen_budget():
+    from app.prompts import advice_prompt
+
+    prompt = advice_prompt("nước hoa EDP là gì?", Preferences(wants_products=False), [])
+    assert "chưa nhờ chọn sản phẩm" in prompt
+    assert "nới ngân sách" not in prompt
+
+
+def test_advice_prompt_without_match_suggests_loosening():
+    from app.prompts import advice_prompt
+
+    prompt = advice_prompt("nam dưới 100k", Preferences(max_budget=100_000), [])
+    assert "nới ngân sách" in prompt

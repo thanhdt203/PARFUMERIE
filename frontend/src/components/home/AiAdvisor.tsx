@@ -20,6 +20,10 @@ export default function AiAdvisor() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // rời trang khi AI đang trả lời -> ngắt kết nối
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   // tin nhắn mới -> cuộn xuống cuối khung chat
   useEffect(() => {
@@ -35,14 +39,34 @@ export default function AiAdvisor() {
     setMessages([...history, { id: newId(), role: 'user', text: question }]);
     setText('');
     setSending(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    // tin trả lời được tạo khi có dữ liệu đầu tiên; trước đó hiện chấm "đang gõ"
+    const replyId = newId();
+    let started = false;
+    const patchReply = (patch: (m: ChatMessage) => ChatMessage) => {
+      const first = !started; // chốt ngay: updater của setState chạy trễ
+      started = true;
+      setMessages((prev) =>
+        first
+          ? [...prev, patch({ id: replyId, role: 'assistant', text: '' })]
+          : prev.map((m) => (m.id === replyId ? patch(m) : m))
+      );
+    };
     try {
-      const res = await aiService.ask(question, history);
-      setMessages((prev) => [...prev, { id: newId(), role: 'assistant', text: res.reply, products: res.products }]);
+      await aiService.askStream(
+        question,
+        history,
+        {
+          onProducts: (products) => products.length > 0 && patchReply((m) => ({ ...m, products })),
+          onDelta: (delta) => patchReply((m) => ({ ...m, text: m.text + delta })),
+        },
+        controller.signal
+      );
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { id: newId(), role: 'assistant', text: `Xin lỗi, mình chưa trả lời được lúc này. ${getErrorMessage(err)}` },
-      ]);
+      const reason = err instanceof Error ? err.message : getErrorMessage(err);
+      patchReply((m) => ({ ...m, text: `${m.text}${m.text ? '\n\n' : ''}Xin lỗi, mình chưa trả lời được lúc này. ${reason}` }));
     } finally {
       setSending(false);
     }
@@ -97,7 +121,7 @@ export default function AiAdvisor() {
           <div className="adv__log" ref={logRef}>
             {messages.map((m) => (
               <div key={m.id} className={`adv__msg adv__msg--${m.role}`}>
-                <p className="adv__bubble">{m.text}</p>
+                {m.text && <p className="adv__bubble">{m.text}</p>}
                 {m.products && m.products.length > 0 && (
                   <div className="prow__scroll adv__products">
                     {m.products.map((p, i) => (
@@ -107,7 +131,7 @@ export default function AiAdvisor() {
                 )}
               </div>
             ))}
-            {sending && (
+            {sending && !messages[messages.length - 1]?.text && (
               <div className="adv__msg adv__msg--assistant">
                 <p className="adv__bubble adv__bubble--typing" aria-label="AI đang trả lời">
                   <span /> <span /> <span />

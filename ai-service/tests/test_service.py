@@ -30,3 +30,36 @@ async def test_service_returns_real_product_ids():
     assert result.product_ids == ["mongo-id"]
     assert "gỗ" in result.reply
 
+
+
+def test_stream_endpoint_emits_products_deltas_done(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app import main
+
+    class StreamGemini(FakeGemini):
+        async def stream_text(self, prompt):
+            yield "Xin "
+            yield "chào"
+
+    monkeypatch.setattr(main, "service", RecommendationService(StreamGemini()))
+    body = {
+        "message": "Nước hoa nam đi tiệc",
+        "products": [{"id": "p1", "name": "Eros", "gender": "nam", "scent_groups": ["woody"], "min_price": 1, "max_price": 2}],
+    }
+    text = TestClient(main.app).post("/recommend/stream", json=body).text
+    assert text.index("event: products") < text.index("event: delta") < text.index("event: done")
+    assert '"product_ids": ["p1"]' in text and '"text": "Xin "' in text
+
+
+def test_stream_endpoint_reports_gemini_error(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app import main
+    from app.gemini_client import GeminiError
+
+    class FailingGemini(FakeGemini):
+        async def generate_json(self, prompt, schema):
+            raise GeminiError("hết quota")
+
+    monkeypatch.setattr(main, "service", RecommendationService(FailingGemini()))
+    text = TestClient(main.app).post("/recommend/stream", json={"message": "x", "products": []}).text
+    assert "event: error" in text and "hết quota" in text

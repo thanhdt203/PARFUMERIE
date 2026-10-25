@@ -16,6 +16,11 @@ class ChatMessage(BaseModel):
     content: str = Field(min_length=1, max_length=500)
 
 
+class Variant(BaseModel):
+    size: str = ""
+    price: float = Field(ge=0)
+
+
 class Product(BaseModel):
     id: str = Field(min_length=1)
     name: str
@@ -29,6 +34,7 @@ class Product(BaseModel):
     base_notes: list[str] = Field(default_factory=list)
     min_price: float = Field(ge=0)
     max_price: float = Field(ge=0)
+    variants: list[Variant] = Field(default_factory=list, max_length=10)
 
 
 class RecommendRequest(BaseModel):
@@ -53,6 +59,7 @@ class Preferences(BaseModel):
     scent_groups: list[ScentGroup] = Field(default_factory=list, max_length=5)
     notes: list[str] = Field(default_factory=list, max_length=10)
     max_budget: float | None = Field(default=None, ge=0)
+    wants_products: bool = True
 
 
 class RecommendResponse(BaseModel):
