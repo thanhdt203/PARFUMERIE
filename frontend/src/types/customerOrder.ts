@@ -39,6 +39,18 @@ export interface CreatedOrder {
   TrangThai: string;
 }
 
+export type PaymentStatus = 'Chưa thanh toán' | 'Đã thanh toán';
+
+/** Thông tin để khách chuyển khoản (server tạo, số tiền lấy từ đơn). QrUrl là ảnh VietQR đã điền sẵn số tiền + nội dung */
+export interface BankTransferInfo {
+  NganHang: string;
+  SoTaiKhoan: string;
+  TenTaiKhoan: string;
+  SoTien: number;
+  NoiDung: string;
+  QrUrl: string;
+}
+
 export interface MyOrderItem {
   _id: Id;
   SoLuongMua: number;
@@ -60,6 +72,10 @@ export interface MyOrder {
   /** Số khách phải trả (đã trừ giảm giá) */
   TongTien: number;
   TrangThai: string;
+  TrangThaiThanhToan: PaymentStatus;
+  NgayThanhToan: IsoDate | null;
+  /** Chỉ có khi đơn chọn chuyển khoản, chưa thanh toán và chưa hủy (và shop đã cấu hình tài khoản nhận tiền) */
+  ChuyenKhoan: BankTransferInfo | null;
   GhiChu: string;
   HoTenNguoiNhan: string;
   SoDienThoaiNguoiNhan: string;

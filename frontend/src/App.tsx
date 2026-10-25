@@ -5,6 +5,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { HomePage } from './pages/HomePage';
+import { AiChatPage } from './pages/AiChatPage';
 import { ProductListPage } from './pages/ProductListPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { WishlistPage } from './pages/CustomerPages';
@@ -34,6 +35,7 @@ function App() {
     <Routes>
       {/* ai cũng vào được (kể cả chưa đăng nhập) */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/tu-van-ai" element={<AiChatPage />} />
       <Route path="/nuoc-hoa" element={<ProductListPage />} />
       <Route path="/nuoc-hoa/:id" element={<ProductDetailPage />} />
       <Route path="/login" element={<LoginPage />} />

@@ -6,6 +6,7 @@ import SanPhamDungTich from "../models/SanPhamDungTich.js";
 import PhuongThucThanhToan from "../models/PhuongThucThanhToan.js";
 import HinhAnh from "../models/HinhAnh.js";
 import { kiemTraVoucherChoDon, demLuotDung, VoucherError } from "../libs/voucherApply.js";
+import { laChuyenKhoan, layThongTinChuyenKhoan } from "../libs/bankTransfer.js";
 // import để Mongoose đăng ký đủ model cho populate
 import "../models/DungTich.js";
 import "../models/ThuongHieu.js";
@@ -158,6 +159,9 @@ const layChiTietTheoDon = async (maDHs) => {
 const dinhDangDon = (don, chiTiet) => {
     // TongTien là số khách phải trả (đã trừ voucher); tiền giảm = tiền hàng - TongTien
     const tamTinh = chiTiet.reduce((sum, d) => sum + d.ThanhTien, 0);
+    const daThanhToan = don.TrangThaiThanhToan === "Đã thanh toán";
+    // chỉ trả thông tin QR khi còn cần chuyển khoản: đúng phương thức, chưa trả tiền, đơn chưa hủy
+    const canChuyenKhoan = laChuyenKhoan(don.MaPTTT?.TenPTTT) && !daThanhToan && don.TrangThai !== "Đã hủy";
     return {
         _id: don._id,
         NgayDat: don.NgayDat,
@@ -166,6 +170,9 @@ const dinhDangDon = (don, chiTiet) => {
         Voucher: don.MaVoucher ? { _id: don.MaVoucher._id, MaCode: don.MaVoucher.MaCode ?? null } : null,
         TongTien: don.TongTien,
         TrangThai: don.TrangThai,
+        TrangThaiThanhToan: daThanhToan ? "Đã thanh toán" : "Chưa thanh toán",
+        NgayThanhToan: don.NgayThanhToan ?? null,
+        ChuyenKhoan: canChuyenKhoan ? layThongTinChuyenKhoan(don) : null,
         GhiChu: don.GhiChu ?? "",
         HoTenNguoiNhan: don.HoTenNguoiNhan,
         SoDienThoaiNguoiNhan: don.SoDienThoaiNguoiNhan,
