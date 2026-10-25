@@ -149,3 +149,34 @@ def test_deep_prompt_includes_profile_but_basic_never_does():
     assert "Lịch sử của khách hàng" in deep and "purchased woody" in deep
     assert "Lịch sử của khách hàng" not in basic
     assert "Lịch sử của khách hàng" not in advice_prompt("gợi ý", Preferences(), [product()], "deep", None)
+
+
+def test_find_named_products_matches_without_accents_and_dedupes():
+    from app.recommendation import find_named_products
+
+    products = [product(id="a", name="Dior Sauvage", brand="Dior"), product(id="b", name="Versace Eros", brand="Versace")]
+    assert [p.id for p in find_named_products(products, ["sauvage", "Dior Sauvage", "eros"])] == ["a", "b"]
+    assert find_named_products(products, ["Bleu de Chanel", "  "]) == []
+
+
+def test_clarify_prompt_asks_questions_and_names_no_products():
+    from app.prompts import advice_prompt
+
+    prompt = advice_prompt("gợi ý đi", Preferences(), [], "deep", None, "clarify")
+    assert "hỏi lại tối đa 2 câu" in prompt
+    assert "nới ngân sách" not in prompt
+
+
+def test_compare_prompt_asks_for_side_by_side_and_small_size_hint():
+    from app.prompts import advice_prompt
+
+    prompt = advice_prompt("so sánh", Preferences(), [product()], "deep", None, "compare")
+    assert "so sánh" in prompt and "nên chọn A nếu" in prompt
+    assert "dung tích nhỏ nhất" in prompt
+
+
+def test_deep_recommend_prompt_hints_small_sizes_but_basic_does_not():
+    from app.prompts import advice_prompt
+
+    assert "dung tích nhỏ nhất" in advice_prompt("x", Preferences(), [product()], "deep")
+    assert "dung tích nhỏ nhất" not in advice_prompt("x", Preferences(), [product()], "basic")

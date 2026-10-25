@@ -1,9 +1,10 @@
 import unicodedata
+from dataclasses import dataclass
 from collections.abc import AsyncIterator
 
 from .gemini_client import GeminiClient
 from .prompts import PREFERENCE_SCHEMA, advice_prompt, preference_prompt
-from .schemas import Mode, Preferences, Product, Profile, RecommendRequest, RecommendResponse
+from .schemas import Intent, Mode, Preferences, Product, Profile, RecommendRequest, RecommendResponse
 
 
 CONTEXT_KEYWORDS = {
@@ -90,37 +91,73 @@ def rank_products(
     return [item[3] for item in ranked[:limit]]
 
 
+def find_named_products(products: list[Product], names: list[str], limit: int = 3) -> list[Product]:
+    """Sản phẩm trong catalog khớp với tên khách nêu (so khớp không dấu, chứa nhau theo hai chiều)."""
+    found: list[Product] = []
+    for name in names:
+        wanted = normalize(name).strip()
+        if not wanted:
+            continue
+        for product in products:
+            full = normalize(f"{product.brand} {product.name}")
+            if product not in found and (wanted in full or normalize(product.name) in wanted):
+                found.append(product)
+                break
+    return found[:limit]
+
+
+@dataclass
+class Selection:
+    preferences: Preferences
+    products: list[Product]
+    intent: Intent
+
+
 class RecommendationService:
     def __init__(self, gemini: GeminiClient):
         self.gemini = gemini
 
-    async def select(self, request: RecommendRequest) -> tuple[Preferences, list[Product]]:
+    async def select(self, request: RecommendRequest) -> Selection:
         history = [message.model_dump() for message in request.history]
         raw_preferences = await self.gemini.generate_json(
             preference_prompt(request.message, history), PREFERENCE_SCHEMA
         )
         preferences = Preferences.model_validate(raw_preferences)
+        if not preferences.wants_products:
+            return Selection(preferences, [], "chat")
+        deep = request.mode == "deep"
+        if deep:
+            named = find_named_products(request.products, preferences.compare_products)
+            if len(named) >= 2:
+                return Selection(preferences, named, "compare")
         candidates = request.products
-        profile = request.profile if request.mode == "deep" else None
+        profile = request.profile if deep else None
         if profile:
             # Không gợi lại chai đã mua, trừ khi khách nhắc đúng tên chai đó
             asked = normalize(request.message)
             bought = {item.id for item in profile.purchased}
             candidates = [p for p in candidates if p.id not in bought or normalize(p.name) in asked]
-        return preferences, rank_products(candidates, preferences, weights=taste_weights(profile))
+        weights = taste_weights(profile)
+        if not preferences.has_criteria() and not weights:
+            return Selection(preferences, [], "clarify")
+        return Selection(preferences, rank_products(candidates, preferences, weights=weights), "recommend")
 
     def stream_advice(
         self, message: str, preferences: Preferences, selected: list[Product], mode: Mode = "basic",
-        profile: Profile | None = None,
+        profile: Profile | None = None, intent: Intent | None = None,
     ) -> AsyncIterator[str]:
-        return self.gemini.stream_text(advice_prompt(message, preferences, selected, mode, profile))
+        return self.gemini.stream_text(advice_prompt(message, preferences, selected, mode, profile, intent))
 
     async def recommend(self, request: RecommendRequest) -> RecommendResponse:
-        preferences, selected = await self.select(request)
-        reply = await self.gemini.generate_text(advice_prompt(request.message, preferences, selected, request.mode, request.profile))
+        selection = await self.select(request)
+        reply = await self.gemini.generate_text(
+            advice_prompt(
+                request.message, selection.preferences, selection.products, request.mode, request.profile, selection.intent
+            )
+        )
         return RecommendResponse(
             reply=reply,
-            product_ids=[product.id for product in selected],
-            preferences=preferences,
+            product_ids=[product.id for product in selection.products],
+            preferences=selection.preferences,
         )
 

@@ -85,6 +85,16 @@ class Preferences(BaseModel):
     notes: list[str] = Field(default_factory=list, max_length=10)
     max_budget: float | None = Field(default=None, ge=0)
     wants_products: bool = True
+    compare_products: list[str] = Field(default_factory=list, max_length=3)
+
+    def has_criteria(self) -> bool:
+        return bool(
+            self.gender or self.occasions or self.seasons or self.styles
+            or self.scent_groups or self.notes or self.max_budget
+        )
+
+
+Intent = Literal["recommend", "compare", "clarify", "chat"]
 
 
 class RecommendResponse(BaseModel):

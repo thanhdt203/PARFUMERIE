@@ -41,9 +41,11 @@ def sse(event: str, data: dict) -> str:
 async def recommend_stream(request: RecommendRequest) -> StreamingResponse:
     async def events():
         try:
-            preferences, selected = await service.select(request)
-            yield sse("products", {"product_ids": [product.id for product in selected]})
-            async for text in service.stream_advice(request.message, preferences, selected, request.mode, request.profile):
+            selection = await service.select(request)
+            yield sse("products", {"product_ids": [product.id for product in selection.products]})
+            async for text in service.stream_advice(
+                request.message, selection.preferences, selection.products, request.mode, request.profile, selection.intent
+            ):
                 yield sse("delta", {"text": text})
             yield sse("done", {})
         except GeminiError as exc:

@@ -1,6 +1,6 @@
 import json
 
-from .schemas import Mode, Preferences, Product, Profile, ProfileProduct
+from .schemas import Intent, Mode, Preferences, Product, Profile, ProfileProduct
 
 
 PREFERENCE_SCHEMA = {
@@ -23,8 +23,12 @@ PREFERENCE_SCHEMA = {
         "notes": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
         "max_budget": {"type": ["number", "null"], "minimum": 0},
         "wants_products": {"type": "boolean"},
+        "compare_products": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
     },
-    "required": ["gender", "occasions", "seasons", "styles", "scent_groups", "notes", "max_budget", "wants_products"],
+    "required": [
+        "gender", "occasions", "seasons", "styles", "scent_groups", "notes", "max_budget",
+        "wants_products", "compare_products",
+    ],
     "additionalProperties": False,
 }
 
@@ -37,8 +41,16 @@ Quy đổi ngân sách tiếng Việt sang VND, ví dụ 2 triệu = 2000000.
 Nhóm hương chỉ dùng các giá trị trong schema. Nếu chưa có dữ liệu, dùng null hoặc mảng rỗng.
 wants_products = true khi người dùng đang tìm, nhờ gợi ý hoặc so sánh sản phẩm để mua (kể cả khi tin nhắn ngắn như "còn loại nào rẻ hơn không"). wants_products = false khi tin nhắn chỉ là chào hỏi, cảm ơn, hoặc câu hỏi kiến thức chung về nước hoa không nhằm chọn sản phẩm.
 
+compare_products: tên các sản phẩm người dùng nêu rõ để so sánh hoặc hỏi sự khác nhau (chỉ khi có từ 2 tên trở lên, giữ đúng tên người dùng viết, có thể lấy từ lượt hội thoại trước); nếu không phải yêu cầu so sánh thì [].
+
 Hội thoại:
 {json.dumps(conversation, ensure_ascii=False)}"""
+
+
+SAMPLE_RULE = (
+    "Nếu khách muốn dùng thử, mua thử, mua chiết, mua tặng nhỏ hoặc ngân sách không đủ dung tích lớn, hãy gợi ý dung tích nhỏ nhất "
+    "còn trong variants của từng sản phẩm để thử trước khi mua chai lớn."
+)
 
 
 def profile_section(profile: Profile | None) -> str:
@@ -57,7 +69,8 @@ def profile_section(profile: Profile | None) -> str:
 
 
 def advice_prompt(
-    message: str, preferences: Preferences, products: list[Product], mode: Mode = "basic", profile: Profile | None = None
+    message: str, preferences: Preferences, products: list[Product], mode: Mode = "basic",
+    profile: Profile | None = None, intent: Intent | None = None,
 ) -> str:
     budget = preferences.max_budget
     compact_products = [{
@@ -78,21 +91,35 @@ def advice_prompt(
             variant.model_dump() for variant in item.variants if budget is None or variant.price <= budget
         ],
     } for item in products]
-    if mode == "deep":
+    intent = intent or ("recommend" if preferences.wants_products else "chat")
+    if intent == "clarify":
+        style_rule = (
+            "Khách chưa nêu đủ thông tin để gợi ý sản phẩm. Viết tiếng Việt thân thiện, tối đa 80 từ: hỏi lại tối đa 2 câu ngắn "
+            "để hiểu nhu cầu (dịp dùng, dùng cho nam hay nữ, ngân sách, nhóm hương yêu thích), mỗi câu kèm 3-4 lựa chọn nhanh. "
+            "Chưa gợi ý sản phẩm cụ thể."
+        )
+    elif intent == "compare":
+        style_rule = (
+            "Khách muốn so sánh các sản phẩm bên dưới. Viết bản so sánh tiếng Việt tự nhiên, lịch sự (tối đa 260 từ), lần lượt theo: "
+            "tầng hương Đầu/Giữa/Cuối, phong cách và dịp dùng phù hợp, giá theo từng dung tích. Kết luận dạng "
+            "\"nên chọn A nếu ..., chọn B nếu ...\" dựa trên nhu cầu khách đã nêu. "
+            "Cuối cùng nhắc chọn dung tích ở thẻ sản phẩm bên dưới để thêm vào giỏ hàng. " + SAMPLE_RULE
+        )
+    elif mode == "deep":
         style_rule = (
             "Viết câu trả lời tiếng Việt tự nhiên, lịch sự (tối đa 220 từ) cho khách hàng đã đăng nhập, đi sâu hơn tư vấn thông thường.\n"
             "Với mỗi sản phẩm: nêu tầng hương Đầu (top), Giữa (heart) và Cuối (base) theo đúng dữ liệu (tầng nào không có dữ liệu thì bỏ qua, "
             "không tự thêm nốt hương), rồi giải thích hương thay đổi theo thời gian ra sao và vì sao hợp với gu, dịp dùng hoặc phong cách người dùng nêu. "
-            "Cuối cùng gợi ý người dùng chọn dung tích ở thẻ sản phẩm bên dưới để thêm vào giỏ hàng."
+            "Cuối cùng gợi ý người dùng chọn dung tích ở thẻ sản phẩm bên dưới để thêm vào giỏ hàng. " + SAMPLE_RULE
         )
     else:
         style_rule = (
             "Viết một câu trả lời tiếng Việt tự nhiên, ngắn gọn (tối đa 140 từ), lịch sự và hữu ích.\n"
             "Giải thích vì sao các sản phẩm được chọn phù hợp với nhu cầu."
         )
-    if products:
+    if products or intent in ("clarify", "compare"):
         empty_rule = ""
-    elif preferences.wants_products:
+    elif intent == "recommend":
         empty_rule = "Hiện không có sản phẩm nào phù hợp: đề nghị người dùng nới ngân sách hoặc tiêu chí."
     else:
         empty_rule = (

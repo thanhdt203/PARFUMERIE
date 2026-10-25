@@ -111,17 +111,68 @@ class _NoCriteriaGemini(FakeGemini):
 
 @pytest.mark.asyncio
 async def test_deep_mode_recommends_by_history_and_skips_already_bought():
-    _, selected = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("deep"))
-    assert [p.id for p in selected] == ["similar"]
+    selection = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("deep"))
+    assert [p.id for p in selection.products] == ["similar"]
 
 
 @pytest.mark.asyncio
 async def test_deep_mode_allows_rebuying_when_customer_names_the_product():
-    _, selected = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("deep", "mua lại Sauvage"))
-    assert "bought" in [p.id for p in selected]
+    selection = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("deep", "mua lại Sauvage"))
+    assert "bought" in [p.id for p in selection.products]
 
 
 @pytest.mark.asyncio
 async def test_basic_mode_ignores_profile():
-    _, selected = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("basic"))
-    assert selected == []
+    selection = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("basic"))
+    assert selection.products == []
+    assert selection.intent == "clarify"
+
+
+class _IntentGemini(FakeGemini):
+    def __init__(self, **prefs):
+        base = {"gender": None, "occasions": [], "seasons": [], "styles": [], "scent_groups": [], "notes": [],
+                "max_budget": None, "wants_products": True, "compare_products": []}
+        self.prefs = {**base, **prefs}
+
+    async def generate_json(self, prompt, schema):
+        return self.prefs
+
+
+def _catalog(mode="deep", **extra):
+    return RecommendRequest(
+        message="x", mode=mode, **extra,
+        products=[
+            {"id": "eros", "name": "Versace Eros", "brand": "Versace", "gender": "nam", "scent_groups": ["woody"], "min_price": 1, "max_price": 2},
+            {"id": "sauvage", "name": "Dior Sauvage", "brand": "Dior", "gender": "nam", "scent_groups": ["fresh"], "min_price": 1, "max_price": 2},
+            {"id": "libre", "name": "YSL Libre", "brand": "YSL", "gender": "nu", "scent_groups": ["floral"], "min_price": 1, "max_price": 2},
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_deep_comparison_selects_exactly_the_named_products():
+    gemini = _IntentGemini(compare_products=["sauvage", "Versace Eros"])
+    selection = await RecommendationService(gemini).select(_catalog())
+    assert selection.intent == "compare"
+    assert [p.id for p in selection.products] == ["sauvage", "eros"]
+
+
+@pytest.mark.asyncio
+async def test_comparison_needs_two_known_products_and_is_deep_only():
+    one_known = _IntentGemini(compare_products=["Sauvage", "Chanel Bleu"], scent_groups=["fresh"])
+    assert (await RecommendationService(one_known).select(_catalog())).intent == "recommend"
+    two_known = _IntentGemini(compare_products=["Sauvage", "Eros"], scent_groups=["fresh"])
+    assert (await RecommendationService(two_known).select(_catalog("basic"))).intent == "recommend"
+
+
+@pytest.mark.asyncio
+async def test_vague_request_without_history_asks_for_clarification():
+    selection = await RecommendationService(_IntentGemini()).select(_catalog())
+    assert (selection.intent, selection.products) == ("clarify", [])
+
+
+@pytest.mark.asyncio
+async def test_specific_request_and_general_chat_keep_their_intents():
+    assert (await RecommendationService(_IntentGemini(gender="nam")).select(_catalog())).intent == "recommend"
+    chat = await RecommendationService(_IntentGemini(wants_products=False, gender="nam")).select(_catalog())
+    assert (chat.intent, chat.products) == ("chat", [])
