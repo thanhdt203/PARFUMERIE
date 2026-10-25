@@ -22,7 +22,7 @@ export interface KnowledgeInput {
 
 export interface KnowledgeList {
   data: KnowledgeEntry[];
-  usage: { activeCount: number; sentCount: number; maxItems: number; charBudget: number };
+  usage: { activeCount: number; maxItems: number };
 }
 
 export interface CustomerBrief {

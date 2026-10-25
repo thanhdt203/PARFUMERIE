@@ -5,13 +5,17 @@ from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 
 from .config import settings
+from .embeddings import GeminiEmbedder, SemanticIndex
 from .gemini_client import GeminiClient, GeminiError
 from .recommendation import RecommendationService
 from .schemas import RecommendRequest, RecommendResponse
 
 
 app = FastAPI(title="Parfumerie AI Service", version="0.1.0")
-service = RecommendationService(GeminiClient(settings))
+service = RecommendationService(
+    GeminiClient(settings),
+    SemanticIndex(GeminiEmbedder(settings)) if settings.semantic_search else None,
+)
 
 
 @app.get("/health")

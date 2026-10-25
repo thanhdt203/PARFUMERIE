@@ -636,11 +636,13 @@ describe("Store settings sent to the AI service", () => {
         assert.equal(aiCalls[0].body.knowledge.length, 2);
     });
 
-    it("drops older knowledge once the character budget is used", async () => {
-        TriThucAI.find = () => query([entry("A", 5000), entry("B", 2900), entry("C", 600), entry("D", 10)]);
+    it("sends every active entry, newest first, capped at 100 (the AI service picks the relevant ones)", async () => {
+        TriThucAI.find = () => query(Array.from({ length: 120 }, (_, i) => entry(`T${i}`, 1000)));
         aiHandler = async () => done();
         await (await stream()).text();
-        assert.deepEqual(aiCalls[0].body.knowledge.map((k) => k.title), ["A", "B"]);
+        const sent = aiCalls[0].body.knowledge;
+        assert.equal(sent.length, 100);
+        assert.deepEqual([sent[0].title, sent[99].title], ["T0", "T99"]);
     });
 
     it("still answers when the settings cannot be loaded", async () => {
@@ -710,15 +712,15 @@ describe("Admin AI management API", () => {
         assert.equal((await call("/config", "PUT", { HuongDanBoSung: 5 })).status, 400);
     });
 
-    it("lists knowledge with how much of it is actually sent", async () => {
+    it("lists knowledge with the number of active entries", async () => {
         TriThucAI.find = () => query([
-            { _id: "1", TieuDe: "A", NoiDung: "x".repeat(5000), DangBat: true },
-            { _id: "2", TieuDe: "B", NoiDung: "x".repeat(4000), DangBat: true },
+            { _id: "1", TieuDe: "A", NoiDung: "x", DangBat: true },
+            { _id: "2", TieuDe: "B", NoiDung: "x", DangBat: true },
             { _id: "3", TieuDe: "C", NoiDung: "y", DangBat: false },
         ]);
         const body = await (await call("/knowledge")).json();
         assert.equal(body.data.length, 3);
-        assert.deepEqual(body.usage, { activeCount: 2, sentCount: 1, maxItems: 30, charBudget: 8000 });
+        assert.deepEqual(body.usage, { activeCount: 2, maxItems: 100 });
     });
 
     it("validates and creates a knowledge entry", async () => {

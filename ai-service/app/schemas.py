@@ -69,7 +69,7 @@ class RecommendRequest(BaseModel):
     mode: Mode = "basic"
     # Cấu hình do admin quản lý: hướng dẫn riêng và kiến thức của cửa hàng
     instructions: str = Field(default="", max_length=2000)
-    knowledge: list[KnowledgeItem] = Field(default_factory=list, max_length=30)
+    knowledge: list[KnowledgeItem] = Field(default_factory=list, max_length=100)
     profile: Profile | None = None
     message: str = Field(min_length=1, max_length=300)
     history: list[ChatMessage] = Field(default_factory=list, max_length=10)

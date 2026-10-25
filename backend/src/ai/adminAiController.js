@@ -4,7 +4,7 @@ import SanPham from "../models/SanPham.js";
 import TriThucAI from "../models/TriThucAI.js";
 import { aiErrorMessage, parseChatBody } from "./aiController.js";
 import { isObjectId } from "./aiHistoryController.js";
-import { KNOWLEDGE_CHAR_BUDGET, MAX_KNOWLEDGE_ITEMS, fitKnowledge, loadAiSettings } from "./aiSettings.js";
+import { MAX_KNOWLEDGE_ITEMS, loadAiSettings } from "./aiSettings.js";
 import { streamAi } from "./aiService.js";
 
 
@@ -75,12 +75,7 @@ export const listKnowledge = async (req, res) => {
         const active = entries.filter((e) => e.DangBat);
         return res.status(200).json({
             data: entries,
-            usage: {
-                activeCount: active.length,
-                sentCount: fitKnowledge(active).length,
-                maxItems: MAX_KNOWLEDGE_ITEMS,
-                charBudget: KNOWLEDGE_CHAR_BUDGET,
-            },
+            usage: { activeCount: active.length, maxItems: MAX_KNOWLEDGE_ITEMS },
         });
     } catch (error) {
         return fail(res, error, "listKnowledge");

@@ -10,7 +10,6 @@ import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import { getErrorMessage } from '../../lib/errors';
-import { formatNumber } from '../../lib/format';
 import { aiAdminService } from '../../services/aiAdminService';
 import { toast } from '../../store/toastStore';
 import type { KnowledgeEntry } from '../../types/aiAdmin';
@@ -167,12 +166,12 @@ export default function KnowledgeTab() {
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-2xl text-sm text-ink-muted">
-          Kiến thức cửa hàng muốn AI dùng khi tư vấn (nồng độ EDP/EDT/Parfum, cách bảo quản, chính sách...). Mục đang bật được gửi
-          kèm mỗi câu hỏi, ưu tiên mục mới cập nhật.
+          Kiến thức cửa hàng muốn AI dùng khi tư vấn (nồng độ EDP/EDT/Parfum, cách bảo quản, chính sách...). Với mỗi câu hỏi, AI
+          tự tìm vài mục liên quan nhất trong các mục đang bật, nên có thể thêm nhiều mục. Mỗi mục nên nói về một chủ đề rõ ràng
+          để AI tìm đúng.
           {usage && (
             <span className="mt-1 block text-xs text-ink-faint">
-              Đang gửi {usage.sentCount}/{usage.activeCount} mục đang bật (tối đa {usage.maxItems} mục, {formatNumber(usage.charBudget)} ký tự).
-              {usage.sentCount < usage.activeCount && ' Một số mục cũ hơn không được gửi, hãy tắt bớt hoặc rút gọn.'}
+              Đang bật {usage.activeCount} mục (tối đa {usage.maxItems} mục).
             </span>
           )}
         </p>
