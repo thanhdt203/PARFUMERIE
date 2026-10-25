@@ -5,7 +5,7 @@ import { askAi, streamAi } from "./aiService.js";
 
 const VALID_ROLES = new Set(["user", "assistant"]);
 
-const parseChatBody = (body) => {
+export const parseChatBody = (body) => {
     const message = typeof body?.message === "string" ? body.message.trim() : "";
     const rawHistory = Array.isArray(body?.history) ? body.history : [];
     if (!message) return { error: "Vui lòng nhập nội dung cần tư vấn" };
@@ -18,7 +18,7 @@ const parseChatBody = (body) => {
     return { message, history };
 };
 
-const aiErrorMessage = (error) => (error.message === "AI_TIMEOUT"
+export const aiErrorMessage = (error) => (error.message === "AI_TIMEOUT"
     ? "Trợ lý AI phản hồi quá lâu, vui lòng thử lại"
     : "Trợ lý AI tạm thời chưa sẵn sàng, vui lòng thử lại sau");
 

@@ -176,3 +176,34 @@ async def test_specific_request_and_general_chat_keep_their_intents():
     assert (await RecommendationService(_IntentGemini(gender="nam")).select(_catalog())).intent == "recommend"
     chat = await RecommendationService(_IntentGemini(wants_products=False, gender="nam")).select(_catalog())
     assert (chat.intent, chat.products) == ("chat", [])
+
+
+def test_stream_endpoint_forwards_store_config_to_gemini(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app import main
+
+    seen = []
+
+    class ConfigGemini(FakeGemini):
+        async def stream_text(self, prompt):
+            seen.append(prompt)
+            yield "ok"
+
+    monkeypatch.setattr(main, "service", RecommendationService(ConfigGemini()))
+    body = {
+        "message": "x", "instructions": "Giọng điệu nhẹ nhàng",
+        "knowledge": [{"title": "EDT", "content": "Nồng độ 5-15%"}],
+        "products": [{"id": "p1", "name": "Eros", "gender": "nam", "scent_groups": ["woody"], "min_price": 1, "max_price": 2}],
+    }
+    assert TestClient(main.app).post("/recommend/stream", json=body).status_code == 200
+    assert "Giọng điệu nhẹ nhàng" in seen[0] and "Nồng độ 5-15%" in seen[0]
+
+
+def test_request_rejects_oversized_store_config():
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        RecommendRequest(message="x", products=[], instructions="a" * 2001)
+    with pytest.raises(ValidationError):
+        RecommendRequest(message="x", products=[], knowledge=[{"title": "t", "content": "c" * 1001}])

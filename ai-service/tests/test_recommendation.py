@@ -180,3 +180,22 @@ def test_deep_recommend_prompt_hints_small_sizes_but_basic_does_not():
 
     assert "dung tích nhỏ nhất" in advice_prompt("x", Preferences(), [product()], "deep")
     assert "dung tích nhỏ nhất" not in advice_prompt("x", Preferences(), [product()], "basic")
+
+
+def test_store_instructions_and_knowledge_are_added_to_the_prompt():
+    from app.prompts import advice_prompt
+    from app.schemas import KnowledgeItem
+
+    knowledge = [KnowledgeItem(title="EDP", content="Eau de Parfum có nồng độ 15-20%")]
+    prompt = advice_prompt("EDP là gì", Preferences(wants_products=False), [], "basic", None, "chat", "  Luôn xưng là Parfumerie  ", knowledge)
+    assert "Kiến thức của cửa hàng" in prompt and "15-20%" in prompt
+    assert "Hướng dẫn riêng của cửa hàng" in prompt and "Luôn xưng là Parfumerie" in prompt
+    assert "Luôn xưng là Parfumerie  " not in prompt  # đã strip
+
+
+def test_prompt_has_no_store_sections_when_nothing_is_configured():
+    from app.prompts import advice_prompt
+
+    prompt = advice_prompt("x", Preferences(), [product()], "basic", None, "recommend", "   ", [])
+    assert "Kiến thức của cửa hàng" not in prompt
+    assert "Hướng dẫn riêng của cửa hàng" not in prompt

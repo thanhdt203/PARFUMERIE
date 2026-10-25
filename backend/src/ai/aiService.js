@@ -1,4 +1,5 @@
 import HinhAnh from "../models/HinhAnh.js";
+import { loadAiSettings } from "./aiSettings.js";
 import SanPham from "../models/SanPham.js";
 import SanPhamDungTich from "../models/SanPhamDungTich.js";
 
@@ -95,10 +96,16 @@ export const hydrateProducts = async (ids, mode = "basic") => {
     });
 };
 
+// Hướng dẫn riêng và tri thức của cửa hàng (chỉ gửi khi có)
+const storeConfig = ({ instructions, knowledge }) => ({
+    ...(instructions && { instructions }),
+    ...(knowledge?.length && { knowledge }),
+});
+
 export const askAi = async ({ message, history }) => {
     const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
     const aiTimeoutMs = Number(process.env.AI_TIMEOUT_MS || 20000);
-    const catalog = await buildCatalog();
+    const [catalog, settings] = await Promise.all([buildCatalog(), loadAiSettings()]);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), aiTimeoutMs);
     let response;
@@ -106,7 +113,7 @@ export const askAi = async ({ message, history }) => {
         response = await fetch(`${aiServiceUrl}/recommend`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, history, products: catalog }),
+            body: JSON.stringify({ message, history, ...storeConfig(settings), products: catalog }),
             signal: controller.signal,
         });
     } catch (error) {
@@ -147,10 +154,10 @@ const parseSseEvent = (block) => {
 
 // Chuyển tiếp luồng SSE của ai-service; send(event, data) được gọi cho từng sự kiện.
 // Timeout tính theo khoảng im lặng giữa hai đoạn dữ liệu, không tính tổng thời gian.
-export const streamAi = async ({ message, history, mode = "basic", profile = null, signal }, send) => {
+export const streamAi = async ({ message, history, mode = "basic", profile = null, settings = null, signal }, send) => {
     const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
     const aiTimeoutMs = Number(process.env.AI_TIMEOUT_MS || 20000);
-    const catalog = await buildCatalog();
+    const [catalog, storeSettings] = await Promise.all([buildCatalog(), settings ?? loadAiSettings()]);
     const controller = new AbortController();
     const onClientAbort = () => controller.abort();
     signal?.addEventListener("abort", onClientAbort);
@@ -165,7 +172,7 @@ export const streamAi = async ({ message, history, mode = "basic", profile = nul
         const response = await fetch(`${aiServiceUrl}/recommend/stream`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, history, mode, ...(profile && { profile }), products: catalog }),
+            body: JSON.stringify({ message, history, mode, ...(profile && { profile }), ...storeConfig(storeSettings), products: catalog }),
             signal: controller.signal,
         });
         if (!response.ok || !response.body) throw new Error("AI_UNAVAILABLE");

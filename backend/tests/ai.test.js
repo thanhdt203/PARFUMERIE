@@ -7,6 +7,9 @@ import DonHang from "../src/models/DonHang.js";
 import LuotXemSanPham from "../src/models/LuotXemSanPham.js";
 import YeuThich from "../src/models/YeuThich.js";
 import productRoute from "../src/routers/productRoute.js";
+import CauHinhAI from "../src/models/CauHinhAI.js";
+import TriThucAI from "../src/models/TriThucAI.js";
+import adminAiRoute from "../src/ai/adminAiRoute.js";
 import HoiThoaiAI from "../src/models/HoiThoaiAI.js";
 import aiHistoryRoute from "../src/ai/aiHistoryRoute.js";
 import KhachHang from "../src/models/KhachHang.js";
@@ -48,6 +51,16 @@ const restoreProfile = () => {
     LuotXemSanPham.find = profileOriginal.lx;
 };
 
+const settingsOriginal = { cfg: CauHinhAI.findOne, kn: TriThucAI.find };
+const stubEmptySettings = () => {
+    CauHinhAI.findOne = () => ({ lean: async () => null });
+    TriThucAI.find = () => query([]);
+};
+const restoreSettings = () => {
+    CauHinhAI.findOne = settingsOriginal.cfg;
+    TriThucAI.find = settingsOriginal.kn;
+};
+
 const original = {
     fetch: globalThis.fetch,
     spFind: SanPham.find,
@@ -82,6 +95,7 @@ beforeEach(() => {
     process.env.AI_SERVICE_URL = AI_URL;
     process.env.AI_TIMEOUT_MS = "1000";
     aiCalls = [];
+    stubEmptySettings();
     aiHandler = async () => aiJson(200, { reply: "ok", product_ids: [] });
     globalThis.fetch = async (url, options) => {
         aiCalls.push({ url: String(url), body: JSON.parse(options.body) });
@@ -96,6 +110,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    restoreSettings();
     globalThis.fetch = original.fetch;
     SanPham.find = original.spFind;
     SanPhamDungTich.find = original.dtFind;
@@ -584,5 +599,209 @@ describe("Product view tracking", () => {
         views.length = 0;
         assert.equal((await original.fetch(viewUrl)).status, 200);
         assert.equal(views.length, 0);
+    });
+});
+
+describe("Store settings sent to the AI service", () => {
+    const enc = new TextEncoder();
+    const done = () => ({ ok: true, status: 200, body: (async function* () { yield enc.encode("event: done\ndata: {}\n\n"); })() });
+    const stream = () => original.fetch(`${baseUrl}/api/ai/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "hello" }),
+    });
+    const entry = (title, size) => ({ TieuDe: title, NoiDung: "x".repeat(size) });
+
+    it("sends nothing extra when no instructions or knowledge are configured", async () => {
+        aiHandler = async () => done();
+        await (await stream()).text();
+        assert.equal("instructions" in aiCalls[0].body, false);
+        assert.equal("knowledge" in aiCalls[0].body, false);
+    });
+
+    it("sends the saved instructions and active knowledge (newest first) on both endpoints", async () => {
+        CauHinhAI.findOne = () => ({ lean: async () => ({ HuongDanBoSung: "Xưng là Parfumerie" }) });
+        let filter;
+        TriThucAI.find = (f) => { filter = f; return query([entry("EDP", 10), entry("EDT", 20)]); };
+        aiHandler = async () => done();
+        await (await stream()).text();
+        assert.deepEqual(filter, { DangBat: true });
+        assert.equal(aiCalls[0].body.instructions, "Xưng là Parfumerie");
+        assert.deepEqual(aiCalls[0].body.knowledge.map((k) => k.title), ["EDP", "EDT"]);
+
+        aiCalls.length = 0;
+        aiHandler = async () => aiJson(200, { reply: "ok", product_ids: [] });
+        await post({ message: "hello" });
+        assert.equal(aiCalls[0].body.instructions, "Xưng là Parfumerie");
+        assert.equal(aiCalls[0].body.knowledge.length, 2);
+    });
+
+    it("drops older knowledge once the character budget is used", async () => {
+        TriThucAI.find = () => query([entry("A", 5000), entry("B", 2900), entry("C", 600), entry("D", 10)]);
+        aiHandler = async () => done();
+        await (await stream()).text();
+        assert.deepEqual(aiCalls[0].body.knowledge.map((k) => k.title), ["A", "B"]);
+    });
+
+    it("still answers when the settings cannot be loaded", async () => {
+        CauHinhAI.findOne = () => { throw new Error("db down"); };
+        aiHandler = async () => done();
+        const res = await stream();
+        assert.equal(res.status, 200);
+        assert.ok((await res.text()).includes("event: done"));
+        assert.equal("knowledge" in aiCalls[0].body, false);
+    });
+});
+
+describe("Admin AI management API", () => {
+    const enc = new TextEncoder();
+    const sse = (...chunks) => ({ ok: true, status: 200, body: (async function* () { for (const c of chunks) yield enc.encode(c); })() });
+    const saved = {
+        cfg: CauHinhAI.findOneAndUpdate, tFind: TriThucAI.find, tCount: TriThucAI.countDocuments, tCreate: TriThucAI.create,
+        tById: TriThucAI.findById, tUpd: TriThucAI.findByIdAndUpdate, tDel: TriThucAI.findByIdAndDelete,
+        agg: HoiThoaiAI.aggregate, hCount: HoiThoaiAI.countDocuments, hById: HoiThoaiAI.findById,
+    };
+    const KID = "a1".repeat(12);
+    let adminServer;
+    let adminUrl;
+
+    const call = (path, method = "GET", body) => original.fetch(`${adminUrl}${path}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+
+    before(async () => {
+        const app = express();
+        app.use(express.json());
+        app.use((req, res, next) => { req.user = { _id: "admin1" }; next(); });
+        app.use("/api/admin/ai", adminAiRoute);
+        await new Promise((resolve) => { adminServer = app.listen(0, "127.0.0.1", resolve); });
+        adminUrl = `http://127.0.0.1:${adminServer.address().port}/api/admin/ai`;
+    });
+    after(() => new Promise((resolve) => adminServer.close(resolve)));
+    afterEach(() => {
+        CauHinhAI.findOneAndUpdate = saved.cfg;
+        TriThucAI.countDocuments = saved.tCount;
+        TriThucAI.create = saved.tCreate;
+        TriThucAI.findById = saved.tById;
+        TriThucAI.findByIdAndUpdate = saved.tUpd;
+        TriThucAI.findByIdAndDelete = saved.tDel;
+        HoiThoaiAI.aggregate = saved.agg;
+        HoiThoaiAI.countDocuments = saved.hCount;
+        HoiThoaiAI.findById = saved.hById;
+    });
+
+    it("reads the saved instructions", async () => {
+        CauHinhAI.findOne = () => ({ lean: async () => ({ HuongDanBoSung: "abc", updatedAt: "2026-01-01" }) });
+        const body = await (await call("/config")).json();
+        assert.equal(body.HuongDanBoSung, "abc");
+        assert.equal(body.maxLength, 2000);
+    });
+
+    it("saves trimmed instructions with the editor's id and rejects bad or oversized ones", async () => {
+        let args;
+        CauHinhAI.findOneAndUpdate = (filter, update, options) => { args = { filter, update, options }; return { lean: async () => ({ HuongDanBoSung: "ok", updatedAt: "t" }) }; };
+        assert.equal((await call("/config", "PUT", { HuongDanBoSung: "  ok  " })).status, 200);
+        assert.equal(args.update.$set.HuongDanBoSung, "ok");
+        assert.equal(args.update.$set.NguoiCapNhat, "admin1");
+        assert.equal(args.options.upsert, true);
+        assert.equal((await call("/config", "PUT", { HuongDanBoSung: "x".repeat(2001) })).status, 400);
+        assert.equal((await call("/config", "PUT", { HuongDanBoSung: 5 })).status, 400);
+    });
+
+    it("lists knowledge with how much of it is actually sent", async () => {
+        TriThucAI.find = () => query([
+            { _id: "1", TieuDe: "A", NoiDung: "x".repeat(5000), DangBat: true },
+            { _id: "2", TieuDe: "B", NoiDung: "x".repeat(4000), DangBat: true },
+            { _id: "3", TieuDe: "C", NoiDung: "y", DangBat: false },
+        ]);
+        const body = await (await call("/knowledge")).json();
+        assert.equal(body.data.length, 3);
+        assert.deepEqual(body.usage, { activeCount: 2, sentCount: 1, maxItems: 30, charBudget: 8000 });
+    });
+
+    it("validates and creates a knowledge entry", async () => {
+        let created;
+        TriThucAI.countDocuments = async () => 0;
+        TriThucAI.create = async (doc) => { created = doc; return { _id: KID, ...doc }; };
+        assert.equal((await call("/knowledge", "POST", { TieuDe: " ", NoiDung: "x" })).status, 400);
+        assert.equal((await call("/knowledge", "POST", { TieuDe: "t", NoiDung: "" })).status, 400);
+        assert.equal((await call("/knowledge", "POST", { TieuDe: "t".repeat(121), NoiDung: "x" })).status, 400);
+        assert.equal((await call("/knowledge", "POST", { TieuDe: "t", NoiDung: "x".repeat(1001) })).status, 400);
+        const res = await call("/knowledge", "POST", { TieuDe: " EDP ", NoiDung: " 15-20% ", DangBat: false });
+        assert.equal(res.status, 201);
+        assert.deepEqual(created, { TieuDe: "EDP", NoiDung: "15-20%", DangBat: false });
+        TriThucAI.countDocuments = async () => 100;
+        assert.equal((await call("/knowledge", "POST", { TieuDe: "t", NoiDung: "x" })).status, 400);
+    });
+
+    it("updates, toggles and deletes knowledge entries safely", async () => {
+        let update;
+        TriThucAI.findById = () => ({ lean: async () => ({ TieuDe: "Cũ", NoiDung: "nội dung cũ" }) });
+        TriThucAI.findByIdAndUpdate = (id, doc) => { update = doc; return { lean: async () => ({ _id: id, ...doc.$set }) }; };
+        assert.equal((await call(`/knowledge/${KID}`, "PUT", { NoiDung: "mới" })).status, 200);
+        assert.deepEqual(update.$set, { TieuDe: "Cũ", NoiDung: "mới" });
+        assert.equal((await call(`/knowledge/${KID}`, "PUT", { DangBat: false })).status, 200);
+        assert.deepEqual(update.$set, { DangBat: false });
+        assert.equal((await call(`/knowledge/${KID}`, "PUT", { DangBat: "no" })).status, 400);
+        assert.equal((await call("/knowledge/abc", "PUT", { DangBat: true })).status, 400);
+        TriThucAI.findByIdAndDelete = async () => null;
+        assert.equal((await call(`/knowledge/${KID}`, "DELETE")).status, 404);
+        TriThucAI.findByIdAndDelete = async () => ({ _id: KID });
+        assert.equal((await call(`/knowledge/${KID}`, "DELETE")).status, 200);
+    });
+
+    it("lists every customer's conversations with pagination and shows one in full", async () => {
+        let pipeline;
+        HoiThoaiAI.aggregate = async (p) => { pipeline = p; return [{ _id: KID, TieuDe: "t", SoTin: 4, KhachHang: { Ho: "Trần", Ten: "B", Email: "b@x.vn" } }]; };
+        HoiThoaiAI.countDocuments = async () => 25;
+        const body = await (await call("/conversations?page=2&limit=10")).json();
+        assert.deepEqual(body.pagination, { page: 2, limit: 10, total: 25, totalPages: 3 });
+        assert.deepEqual(pipeline.find((stage) => stage.$skip), { $skip: 10 });
+        assert.deepEqual(pipeline.find((stage) => stage.$limit), { $limit: 10 });
+
+        SanPham.find = () => query([{ _id: ID_A, TenSP: "Eros" }]);
+        HoiThoaiAI.findById = () => ({ populate: () => ({ lean: async () => ({
+            _id: KID, TieuDe: "t", MaKH: { Ho: "Trần", Ten: "B", Email: "b@x.vn" },
+            TinNhan: [{ VaiTro: "user", NoiDung: "q" }, { VaiTro: "assistant", NoiDung: "a", MaSanPham: [ID_A] }],
+        }) }) });
+        const detail = await (await call(`/conversations/${KID}`)).json();
+        assert.equal(detail.KhachHang.Email, "b@x.vn");
+        assert.deepEqual(detail.messages[1].products, ["Eros"]);
+        assert.equal((await call("/conversations/abc")).status, 400);
+    });
+
+    it("tests the AI with a draft instruction without saving anything", async () => {
+        CauHinhAI.findOne = () => ({ lean: async () => ({ HuongDanBoSung: "bản đã lưu" }) });
+        TriThucAI.find = () => query([{ TieuDe: "EDP", NoiDung: "x".repeat(10) }]);
+        aiHandler = async () => sse(
+            `event: products\ndata: {"product_ids": ["${ID_A}"]}\n\n`,
+            'event: delta\ndata: {"text": "Xin "}\n\nevent: delta\ndata: {"text": "chào"}\n\n',
+            "event: done\ndata: {}\n\n",
+        );
+        const res = await call("/test", "POST", { message: "hello", mode: "deep", huongDan: "  bản nháp  " });
+        assert.equal(res.status, 200);
+        const body = await res.json();
+        assert.equal(body.reply, "Xin chào");
+        assert.equal(body.mode, "deep");
+        assert.deepEqual(body.products.map((p) => p.TenSP), ["A"]);
+        assert.equal(aiCalls[0].body.instructions, "bản nháp");
+        assert.equal(aiCalls[0].body.mode, "deep");
+        assert.equal(aiCalls[0].body.knowledge[0].title, "EDP");
+        assert.equal("profile" in aiCalls[0].body, false);
+
+        aiCalls.length = 0;
+        aiHandler = async () => sse("event: done\ndata: {}\n\nevent: x\ndata: {}\n\n");
+        assert.equal((await call("/test", "POST", { message: "hello" })).status, 503); // AI không trả lời gì
+        assert.equal(aiCalls[0].body.instructions, "bản đã lưu");
+        assert.equal(aiCalls[0].body.mode, "basic");
+    });
+
+    it("rejects invalid test input", async () => {
+        assert.equal((await call("/test", "POST", { message: "  " })).status, 400);
+        assert.equal((await call("/test", "POST", { message: "hi", huongDan: "x".repeat(2001) })).status, 400);
+        assert.equal((await call("/test", "POST", { message: "hi", huongDan: 5 })).status, 400);
+        assert.equal(aiCalls.length, 0);
     });
 });

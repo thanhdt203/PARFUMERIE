@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 
 from .gemini_client import GeminiClient
 from .prompts import PREFERENCE_SCHEMA, advice_prompt, preference_prompt
-from .schemas import Intent, Mode, Preferences, Product, Profile, RecommendRequest, RecommendResponse
+from .schemas import Intent, Preferences, Product, Profile, RecommendRequest, RecommendResponse
 
 
 CONTEXT_KEYWORDS = {
@@ -142,22 +142,21 @@ class RecommendationService:
             return Selection(preferences, [], "clarify")
         return Selection(preferences, rank_products(candidates, preferences, weights=weights), "recommend")
 
-    def stream_advice(
-        self, message: str, preferences: Preferences, selected: list[Product], mode: Mode = "basic",
-        profile: Profile | None = None, intent: Intent | None = None,
-    ) -> AsyncIterator[str]:
-        return self.gemini.stream_text(advice_prompt(message, preferences, selected, mode, profile, intent))
+    @staticmethod
+    def _advice_prompt(request: RecommendRequest, selection: Selection) -> str:
+        return advice_prompt(
+            request.message, selection.preferences, selection.products, request.mode, request.profile,
+            selection.intent, request.instructions, request.knowledge,
+        )
+
+    def stream_advice(self, request: RecommendRequest, selection: Selection) -> AsyncIterator[str]:
+        return self.gemini.stream_text(self._advice_prompt(request, selection))
 
     async def recommend(self, request: RecommendRequest) -> RecommendResponse:
         selection = await self.select(request)
-        reply = await self.gemini.generate_text(
-            advice_prompt(
-                request.message, selection.preferences, selection.products, request.mode, request.profile, selection.intent
-            )
-        )
+        reply = await self.gemini.generate_text(self._advice_prompt(request, selection))
         return RecommendResponse(
             reply=reply,
             product_ids=[product.id for product in selection.products],
             preferences=selection.preferences,
         )
-
