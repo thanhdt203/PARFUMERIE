@@ -1,6 +1,6 @@
 import json
 
-from .schemas import Mode, Preferences, Product
+from .schemas import Mode, Preferences, Product, Profile, ProfileProduct
 
 
 PREFERENCE_SCHEMA = {
@@ -41,7 +41,24 @@ Hội thoại:
 {json.dumps(conversation, ensure_ascii=False)}"""
 
 
-def advice_prompt(message: str, preferences: Preferences, products: list[Product], mode: Mode = "basic") -> str:
+def profile_section(profile: Profile | None) -> str:
+    if not profile or profile.is_empty():
+        return ""
+    def brief(items: list[ProfileProduct]) -> list[dict]:
+        return [{"name": i.name, "brand": i.brand, "scent_groups": i.scent_groups} for i in items]
+
+    data = {"da_mua": brief(profile.purchased), "da_thich": brief(profile.liked), "da_xem": brief(profile.viewed)}
+    return (
+        "\nLịch sử của khách hàng (chỉ để cá nhân hóa): "
+        + json.dumps(data, ensure_ascii=False)
+        + "\nNếu thực sự liên quan, hãy nhắc ngắn gọn gợi ý này dựa trên chai khách đã mua/thích/xem (nêu đúng tên chai trong lịch sử, "
+        "ví dụ \"vì bạn từng chọn ...\"). Không suy diễn thêm về khách và không nhắc lịch sử nếu không liên quan đến câu hỏi."
+    )
+
+
+def advice_prompt(
+    message: str, preferences: Preferences, products: list[Product], mode: Mode = "basic", profile: Profile | None = None
+) -> str:
     budget = preferences.max_budget
     compact_products = [{
         "name": item.name,
@@ -91,5 +108,5 @@ Giá trong dữ liệu là giá theo từng dung tích (variants). Khi nêu giá
 
 Câu hỏi: {message}
 Tiêu chí: {preferences.model_dump_json()}
-Sản phẩm đã được hệ thống chọn: {json.dumps(compact_products, ensure_ascii=False)}"""
+Sản phẩm đã được hệ thống chọn: {json.dumps(compact_products, ensure_ascii=False)}{profile_section(profile if mode == "deep" else None)}"""
 

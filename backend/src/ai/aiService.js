@@ -147,7 +147,7 @@ const parseSseEvent = (block) => {
 
 // Chuyển tiếp luồng SSE của ai-service; send(event, data) được gọi cho từng sự kiện.
 // Timeout tính theo khoảng im lặng giữa hai đoạn dữ liệu, không tính tổng thời gian.
-export const streamAi = async ({ message, history, mode = "basic", signal }, send) => {
+export const streamAi = async ({ message, history, mode = "basic", profile = null, signal }, send) => {
     const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
     const aiTimeoutMs = Number(process.env.AI_TIMEOUT_MS || 20000);
     const catalog = await buildCatalog();
@@ -165,7 +165,7 @@ export const streamAi = async ({ message, history, mode = "basic", signal }, sen
         const response = await fetch(`${aiServiceUrl}/recommend/stream`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, history, mode, products: catalog }),
+            body: JSON.stringify({ message, history, mode, ...(profile && { profile }), products: catalog }),
             signal: controller.signal,
         });
         if (!response.ok || !response.body) throw new Error("AI_UNAVAILABLE");

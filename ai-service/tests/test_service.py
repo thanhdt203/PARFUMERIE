@@ -90,3 +90,38 @@ def test_stream_endpoint_passes_mode_to_advice(monkeypatch):
     body = {"message": "x", "mode": "deep", "products": [{"id": "p1", "name": "Eros", "gender": "nam", "scent_groups": ["woody"], "min_price": 1, "max_price": 2}]}
     TestClient(main.app).post("/recommend/stream", json=body)
     assert "tầng hương Đầu" in seen[0]
+
+
+def _profile_request(mode, message="gợi ý cho mình chai mới"):
+    return RecommendRequest(
+        message=message, mode=mode,
+        profile={"purchased": [{"id": "bought", "name": "Sauvage", "gender": "nam", "scent_groups": ["woody"]}]},
+        products=[
+            {"id": "bought", "name": "Sauvage", "gender": "nam", "scent_groups": ["woody"], "min_price": 1, "max_price": 2},
+            {"id": "similar", "name": "Eros", "gender": "nam", "scent_groups": ["woody"], "min_price": 1, "max_price": 2},
+        ],
+    )
+
+
+class _NoCriteriaGemini(FakeGemini):
+    async def generate_json(self, prompt, schema):
+        return {"gender": None, "occasions": [], "seasons": [], "styles": [], "scent_groups": [], "notes": [],
+                "max_budget": None, "wants_products": True}
+
+
+@pytest.mark.asyncio
+async def test_deep_mode_recommends_by_history_and_skips_already_bought():
+    _, selected = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("deep"))
+    assert [p.id for p in selected] == ["similar"]
+
+
+@pytest.mark.asyncio
+async def test_deep_mode_allows_rebuying_when_customer_names_the_product():
+    _, selected = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("deep", "mua lại Sauvage"))
+    assert "bought" in [p.id for p in selected]
+
+
+@pytest.mark.asyncio
+async def test_basic_mode_ignores_profile():
+    _, selected = await RecommendationService(_NoCriteriaGemini()).select(_profile_request("basic"))
+    assert selected == []

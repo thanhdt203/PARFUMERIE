@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, beforeEach, describe, it } from "node:test";
 import express from "express";
 import jwt from "jsonwebtoken";
+import ChiTietDonHang from "../src/models/ChiTietDonHang.js";
+import DonHang from "../src/models/DonHang.js";
+import LuotXemSanPham from "../src/models/LuotXemSanPham.js";
+import YeuThich from "../src/models/YeuThich.js";
+import productRoute from "../src/routers/productRoute.js";
 import HoiThoaiAI from "../src/models/HoiThoaiAI.js";
 import aiHistoryRoute from "../src/ai/aiHistoryRoute.js";
 import KhachHang from "../src/models/KhachHang.js";
@@ -28,6 +33,20 @@ const product = (id, name, extra = {}) => ({
     _id: id, TenSP: name, MoTa: "", ThongTinChiTiet: "", GioiTinh: "nam", NhomHuong: ["woody"],
     GiaThapNhat: 1_000_000, GiaCaoNhat: 2_000_000, MaTH: { TenTH: "Brand" }, ...extra,
 });
+
+const profileOriginal = { dh: DonHang.find, ct: ChiTietDonHang.find, yt: YeuThich.find, lx: LuotXemSanPham.find };
+const stubEmptyProfile = () => {
+    DonHang.find = () => query([]);
+    ChiTietDonHang.find = () => query([]);
+    YeuThich.find = () => query([]);
+    LuotXemSanPham.find = () => query([]);
+};
+const restoreProfile = () => {
+    DonHang.find = profileOriginal.dh;
+    ChiTietDonHang.find = profileOriginal.ct;
+    YeuThich.find = profileOriginal.yt;
+    LuotXemSanPham.find = profileOriginal.lx;
+};
 
 const original = {
     fetch: globalThis.fetch,
@@ -270,6 +289,7 @@ describe("POST /api/ai/chat/stream modes", () => {
         process.env.ACCESS_TOKEN_SECRET = "test-secret";
         KhachHang.findById = () => ({ select: async () => ({ _id: "u1" }) });
         NhanVien.findById = () => ({ select: async () => ({ _id: "u1", VaiTro: "staff" }) });
+        stubEmptyProfile();
         aiHandler = async () => productsThenDone();
         SanPham.find = (filter) => query(
             filter?._id
@@ -285,6 +305,7 @@ describe("POST /api/ai/chat/stream modes", () => {
         KhachHang.findById = original2.kh;
         NhanVien.findById = original2.nv;
         process.env.ACCESS_TOKEN_SECRET = original2.secret;
+        restoreProfile();
     });
 
     it("guest gets basic mode and plain product cards", async () => {
@@ -334,6 +355,7 @@ describe("AI conversation history", () => {
         updates = [];
         HoiThoaiAI.create = async (doc) => { creates.push(doc); return { _id: OID }; };
         HoiThoaiAI.findOneAndUpdate = async (filter, update) => { updates.push({ filter, update }); return null; };
+        stubEmptyProfile();
         aiHandler = async () => sseBody(
             `event: products\ndata: {"product_ids": ["${ID_A}"]}\n\n`,
             'event: delta\ndata: {"text": "Xin "}\n\nevent: delta\ndata: {"text": "chào"}\n\n',
@@ -347,6 +369,7 @@ describe("AI conversation history", () => {
         process.env.ACCESS_TOKEN_SECRET = saved.secret;
         HoiThoaiAI.create = saved.create;
         HoiThoaiAI.findOneAndUpdate = saved.upd;
+        restoreProfile();
     });
 
     it("saves a finished exchange of a logged-in customer into a new conversation", async () => {
@@ -439,5 +462,127 @@ describe("AI conversation history", () => {
             HoiThoaiAI.findOneAndDelete = async () => null;
             assert.equal((await original.fetch(`${historyUrl}/conversations/${OID}`, { method: "DELETE" })).status, 404);
         });
+    });
+});
+
+describe("Personalized profile for deep mode", () => {
+    const enc = new TextEncoder();
+    const done = () => ({ ok: true, status: 200, body: (async function* () { yield enc.encode("event: done\ndata: {}\n\n"); })() });
+    const saved = { kh: KhachHang.findById, secret: process.env.ACCESS_TOKEN_SECRET, sp: SanPham.find };
+    const ORDER_NEW = "1".repeat(24);
+    const ORDER_OLD = "2".repeat(24);
+    const post = (auth) => original.fetch(`${baseUrl}/api/ai/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(auth ? { Authorization: `Bearer ${auth}` } : {}) },
+        body: JSON.stringify({ message: "hello" }),
+    });
+    const customer = () => jwt.sign({ userId: "u1", role: "customer" }, "test-secret");
+    let filters;
+
+    beforeEach(() => {
+        process.env.ACCESS_TOKEN_SECRET = "test-secret";
+        KhachHang.findById = () => ({ select: async () => ({ _id: "u1" }) });
+        aiHandler = async () => done();
+        filters = {};
+        DonHang.find = (filter) => { filters.order = filter; return query([{ _id: ORDER_NEW }, { _id: ORDER_OLD }]); };
+        ChiTietDonHang.find = () => query([
+            { MaDH: ORDER_OLD, MaSPDungTich: { MaSP: ID_B } },
+            { MaDH: ORDER_NEW, MaSPDungTich: { MaSP: ID_A } },
+            { MaDH: ORDER_NEW, MaSPDungTich: { MaSP: ID_A } },
+        ]);
+        YeuThich.find = () => query([{ MaSP: ID_C }]);
+        LuotXemSanPham.find = () => query([{ MaSP: ID_D }, { MaSP: ID_A }]);
+        SanPham.find = (filter) => query(filter?._id?.$in
+            ? [ID_A, ID_B, ID_C, ID_D].map((id) => product(id, `P-${id[0]}`, { NhomHuong: ["woody"], NotHuong: { Dau: ["cam"] } }))
+            : [product(ID_A, "A")]);
+    });
+
+    afterEach(() => {
+        KhachHang.findById = saved.kh;
+        process.env.ACCESS_TOKEN_SECRET = saved.secret;
+        SanPham.find = saved.sp;
+        restoreProfile();
+    });
+
+    it("sends purchased (newest order first, deduped), liked and viewed products to the AI service", async () => {
+        await (await post(customer())).text();
+        const profile = aiCalls[0].body.profile;
+        assert.deepEqual(profile.purchased.map((p) => p.id), [ID_A, ID_B]);
+        assert.deepEqual(profile.liked.map((p) => p.id), [ID_C]);
+        assert.deepEqual(profile.viewed.map((p) => p.id), [ID_D, ID_A]);
+        assert.deepEqual(profile.purchased[0], {
+            id: ID_A, name: "P-a", brand: "Brand", gender: "nam", scent_groups: ["woody"], notes: ["cam"],
+        });
+    });
+
+    it("ignores cancelled orders and never builds a profile for guests", async () => {
+        await (await post(customer())).text();
+        assert.deepEqual(filters.order, { MaKH: "u1", TrangThai: { $ne: "Đã hủy" } });
+        aiCalls.length = 0;
+        await (await post(null)).text();
+        assert.equal("profile" in aiCalls[0].body, false);
+    });
+
+    it("omits the profile when the customer has no history", async () => {
+        stubEmptyProfile();
+        await (await post(customer())).text();
+        assert.equal("profile" in aiCalls[0].body, false);
+    });
+
+    it("still answers when building the profile fails", async () => {
+        DonHang.find = () => { throw new Error("db down"); };
+        const res = await post(customer());
+        assert.equal(res.status, 200);
+        assert.ok((await res.text()).includes("event: done"));
+        assert.equal("profile" in aiCalls[0].body, false);
+    });
+});
+
+describe("Product view tracking", () => {
+    const saved = { kh: KhachHang.findById, secret: process.env.ACCESS_TOKEN_SECRET, one: SanPham.findOne, upd: SanPham.updateOne, dt: SanPhamDungTich.find, ha: HinhAnh.find, lx: LuotXemSanPham.updateOne };
+    let viewServer;
+    let viewUrl;
+    let views;
+
+    before(async () => {
+        const app = express();
+        app.use("/api/products", productRoute);
+        await new Promise((resolve) => { viewServer = app.listen(0, "127.0.0.1", resolve); });
+        viewUrl = `http://127.0.0.1:${viewServer.address().port}/api/products/${ID_A}`;
+    });
+    after(() => new Promise((resolve) => viewServer.close(resolve)));
+
+    beforeEach(() => {
+        process.env.ACCESS_TOKEN_SECRET = "test-secret";
+        KhachHang.findById = () => ({ select: async () => ({ _id: "u1" }) });
+        views = [];
+        SanPham.findOne = () => query(product(ID_A, "A"));
+        SanPham.updateOne = async () => ({});
+        SanPhamDungTich.find = () => query([]);
+        HinhAnh.find = () => query([]);
+        LuotXemSanPham.updateOne = async (filter, update, options) => { views.push({ filter, update, options }); };
+    });
+
+    afterEach(() => {
+        KhachHang.findById = saved.kh;
+        process.env.ACCESS_TOKEN_SECRET = saved.secret;
+        SanPham.findOne = saved.one;
+        SanPham.updateOne = saved.upd;
+        SanPhamDungTich.find = saved.dt;
+        HinhAnh.find = saved.ha;
+        LuotXemSanPham.updateOne = saved.lx;
+    });
+
+    it("records a view for a logged-in customer only", async () => {
+        const token = jwt.sign({ userId: "u1", role: "customer" }, "test-secret");
+        assert.equal((await original.fetch(viewUrl, { headers: { Authorization: `Bearer ${token}` } })).status, 200);
+        assert.equal(views.length, 1);
+        assert.deepEqual(views[0].filter, { MaKH: "u1", MaSP: ID_A });
+        assert.equal(views[0].update.$inc.SoLan, 1);
+        assert.equal(views[0].options.upsert, true);
+
+        views.length = 0;
+        assert.equal((await original.fetch(viewUrl)).status, 200);
+        assert.equal(views.length, 0);
     });
 });

@@ -1,4 +1,5 @@
 import { saveExchange } from "./aiHistoryController.js";
+import { buildProfile } from "./aiProfile.js";
 import { askAi, streamAi } from "./aiService.js";
 
 
@@ -69,7 +70,8 @@ export const chatStream = async (req, res) => {
     };
     write("mode", { mode });
     try {
-        await streamAi({ message, history, mode, signal: abort.signal }, send);
+        const profile = persist ? await buildProfile(req.user._id) : null;
+        await streamAi({ message, history, mode, profile, signal: abort.signal }, send);
     } catch (error) {
         console.error("Lỗi khi gọi AI service (stream):", error.message);
         write("error", { message: aiErrorMessage(error) });

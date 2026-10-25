@@ -101,3 +101,51 @@ def test_basic_advice_prompt_keeps_short_style_and_merged_notes():
     assert "tối đa 140 từ" in basic
     assert '"notes": ["cam bergamot", "gỗ đàn hương"]' in basic
     assert "top_notes" not in basic
+
+
+def profile_of(**groups):
+    from app.schemas import Profile
+
+    def items(name, scent_groups):
+        return [{"id": f"{name}-{g}", "name": f"{name} {g}", "gender": "nam", "scent_groups": [g]} for g in scent_groups]
+
+    return Profile(**{field: items(field, scent_groups) for field, scent_groups in groups.items()})
+
+
+def test_taste_weights_prefer_purchased_over_liked_over_viewed():
+    from app.recommendation import taste_weights
+
+    weights = taste_weights(profile_of(purchased=["woody"], liked=["fresh"], viewed=["floral"]))
+    assert weights["woody"] > weights["fresh"] > weights["floral"] > 0
+    assert taste_weights(None) == {}
+
+
+def test_profile_affinity_alone_makes_a_product_relevant_and_ranks_by_taste():
+    from app.recommendation import taste_weights
+
+    woody = product(id="woody", name="W", scent_groups=["woody"])
+    fresh = product(id="fresh", name="F", scent_groups=["fresh"])
+    weights = taste_weights(profile_of(purchased=["woody"]))
+    assert rank_products([fresh, woody], Preferences(), weights=weights) == [woody]
+    assert rank_products([fresh, woody], Preferences(wants_products=False), weights=weights) == []
+
+
+def test_explicit_criteria_still_beat_profile_affinity():
+    from app.recommendation import taste_weights
+
+    woody = product(id="woody", name="W", scent_groups=["woody"])
+    fresh = product(id="fresh", name="F", scent_groups=["fresh"])
+    weights = taste_weights(profile_of(viewed=["woody"]))
+    prefs = Preferences(scent_groups=["fresh"], wants_products=True)
+    assert [item.id for item in rank_products([woody, fresh], prefs, weights=weights)][0] == "fresh"
+
+
+def test_deep_prompt_includes_profile_but_basic_never_does():
+    from app.prompts import advice_prompt
+
+    profile = profile_of(purchased=["woody"])
+    deep = advice_prompt("gợi ý", Preferences(), [product()], "deep", profile)
+    basic = advice_prompt("gợi ý", Preferences(), [product()], "basic", profile)
+    assert "Lịch sử của khách hàng" in deep and "purchased woody" in deep
+    assert "Lịch sử của khách hàng" not in basic
+    assert "Lịch sử của khách hàng" not in advice_prompt("gợi ý", Preferences(), [product()], "deep", None)

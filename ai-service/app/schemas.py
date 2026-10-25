@@ -40,8 +40,29 @@ class Product(BaseModel):
 Mode = Literal["basic", "deep"]
 
 
+class ProfileProduct(BaseModel):
+    id: str = Field(min_length=1)
+    name: str
+    brand: str = ""
+    gender: Gender
+    scent_groups: list[ScentGroup] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+class Profile(BaseModel):
+    """Lịch sử của khách hàng đã đăng nhập: chai đã mua, đã xem, đã thích."""
+
+    purchased: list[ProfileProduct] = Field(default_factory=list, max_length=10)
+    viewed: list[ProfileProduct] = Field(default_factory=list, max_length=10)
+    liked: list[ProfileProduct] = Field(default_factory=list, max_length=10)
+
+    def is_empty(self) -> bool:
+        return not (self.purchased or self.viewed or self.liked)
+
+
 class RecommendRequest(BaseModel):
     mode: Mode = "basic"
+    profile: Profile | None = None
     message: str = Field(min_length=1, max_length=300)
     history: list[ChatMessage] = Field(default_factory=list, max_length=10)
     products: list[Product] = Field(max_length=100)
