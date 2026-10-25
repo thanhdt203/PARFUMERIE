@@ -1,6 +1,7 @@
 import SanPham, { boDau, GIOI_TINH, NHOM_HUONG } from "../models/SanPham.js";
 import SanPhamDungTich from "../models/SanPhamDungTich.js";
 import HinhAnh from "../models/HinhAnh.js";
+import LuotXemSanPham from "../models/LuotXemSanPham.js";
 import ThuongHieu from "../models/ThuongHieu.js";
 import DungTich from "../models/DungTich.js";
 
@@ -298,6 +299,15 @@ export const getProductById = async (req, res) => {
         SanPham.updateOne({ _id: id }, { $inc: { LuotXem: 1 } }, { timestamps: false }).catch((err) =>
             console.error("Không cập nhật được LuotXem", err)
         );
+
+        // khách hàng đã đăng nhập: ghi lại để AI cá nhân hóa gợi ý
+        if (req.role === "customer") {
+            LuotXemSanPham.updateOne(
+                { MaKH: req.user._id, MaSP: id },
+                { $inc: { SoLan: 1 }, $set: { LanXemCuoi: new Date() } },
+                { upsert: true }
+            ).catch((err) => console.error("Không ghi được lượt xem sản phẩm", err));
+        }
 
         const [bienThes, hinhAnhs] = await Promise.all([
             SanPhamDungTich.find({ MaSP: id })

@@ -14,6 +14,12 @@ export interface ProductCardData {
   NhomHuong?: string[];
 }
 
+/** Sản phẩm AI gợi ý ở chế độ chuyên sâu (khách đã đăng nhập): kèm tầng hương và dung tích còn hàng */
+export interface AiProductCardData extends ProductCardData {
+  NotHuong?: { Dau: string[]; Giua: string[]; Cuoi: string[] };
+  BienThe?: ProductVariantView[];
+}
+
 /** Một mục trên trang chủ (một hàng cuộn ngang) */
 export interface ProductSection {
   key: string;
@@ -72,5 +78,5 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   /** Sản phẩm AI gợi ý kèm theo câu trả lời */
-  products?: ProductCardData[];
+  products?: AiProductCardData[];
 }

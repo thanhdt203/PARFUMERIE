@@ -1,17 +1,49 @@
-import api from '../lib/api';
+import api, { getAccessToken } from '../lib/api';
 import { shopService } from './shopService';
-import type { ChatMessage, ProductCardData } from '../types/shop';
+import type { AiProductCardData, ChatMessage, ProductVariantView } from '../types/shop';
 import { mockDelay, USE_MOCK } from './config';
 
 export interface AiReply {
   reply: string;
   /** Sản phẩm AI gợi ý (có thể không có) */
-  products?: ProductCardData[];
+  products?: AiProductCardData[];
+}
+
+export interface AiConversationSummary {
+  _id: string;
+  TieuDe: string;
+  updatedAt: string;
+}
+
+export interface AiConversation {
+  _id: string;
+  messages: { role: 'user' | 'assistant'; text: string; products?: AiProductCardData[] }[];
+}
+
+export interface AiStreamHandlers {
+  /** Id hội thoại đã lưu (chỉ khách đã đăng nhập) */
+  onConversation?(id: string): void;
+  /** Sản phẩm gợi ý — đến trước phần chữ */
+  onProducts(products: AiProductCardData[]): void;
+  /** Một đoạn chữ của câu trả lời */
+  onDelta(text: string): void;
 }
 
 export interface AiService {
   /** Gửi câu hỏi kèm lịch sử chat; trả về câu trả lời của AI */
   ask(message: string, history: ChatMessage[]): Promise<AiReply>;
+  /** Như ask nhưng trả lời dần qua handlers; reject nếu lỗi, resolve khi AI trả lời xong */
+  askStream(
+    message: string,
+    history: ChatMessage[],
+    handlers: AiStreamHandlers,
+    signal?: AbortSignal,
+    conversationId?: string | null
+  ): Promise<void>;
+  /** Lịch sử hội thoại đã lưu của khách hàng đăng nhập */
+  listConversations(): Promise<AiConversationSummary[]>;
+  getConversation(id: string): Promise<AiConversation>;
+  deleteConversation(id: string): Promise<void>;
 }
 
 // Mock: chưa có AI thật nên trả lời mẫu + vài sản phẩm bất kỳ để xem giao diện
@@ -24,6 +56,22 @@ const mockService: AiService = {
       reply: `Cảm ơn bạn! Dựa trên nhu cầu "${message}", mình gợi ý một vài mùi hương phù hợp bên dưới. (Đây là câu trả lời mẫu, chưa nối AI thật.)`,
       products: all.slice(start, start + 3),
     };
+  },
+  async listConversations() {
+    return [];
+  },
+  async getConversation(id) {
+    return { _id: id, messages: [] };
+  },
+  async deleteConversation() {},
+  async askStream(message, history, handlers, signal) {
+    const res = await this.ask(message, history);
+    if (res.products) handlers.onProducts(res.products);
+    for (const word of res.reply.split(/(?<= )/)) {
+      if (signal?.aborted) return;
+      await mockDelay(40);
+      handlers.onDelta(word);
+    }
   },
 };
 
@@ -41,25 +89,116 @@ interface ApiAiProduct {
   GiaCaoNhat: number;
   AnhChinh: string | null;
   ThuongHieu?: { TenTH: string } | null;
+  /** Chỉ có ở chế độ chuyên sâu */
+  NotHuong?: { Dau: string[]; Giua: string[]; Cuoi: string[] };
+  BienThe?: ProductVariantView[];
+}
+
+const toHistory = (history: ChatMessage[]) => history.map((m) => ({ role: m.role, content: m.text }));
+
+const toProductCard = (sp: ApiAiProduct): AiProductCardData => ({
+  _id: sp._id,
+  TenSP: sp.TenSP,
+  TenThuongHieu: sp.ThuongHieu?.TenTH ?? '',
+  GiaThapNhat: sp.GiaThapNhat,
+  GiaCaoNhat: sp.GiaCaoNhat,
+  AnhChinh: sp.AnhChinh,
+  NotHuong: sp.NotHuong,
+  BienThe: sp.BienThe,
+});
+
+/**
+ * Streaming (SSE qua POST nên không dùng EventSource):
+ *   POST /api/ai/chat/stream, cùng body với /ai/chat
+ *   event conversation: { id }                   (khách đã đăng nhập: hội thoại đã lưu, trước done)
+ *   event mode:     { mode: 'basic' | 'deep' }   (deep khi gửi kèm token khách hàng)
+ *   event products: { products: [...] }   (một lần, trước phần chữ)
+ *   event delta:    { text: string }      (nhiều lần)
+ *   event done:     {}
+ *   event error:    { message: string }
+ * Lỗi kiểm tra đầu vào (400) trả JSON thường { message }.
+ */
+async function readSseStream(res: Response, handlers: AiStreamHandlers): Promise<void> {
+  if (!res.body) throw new Error('Trình duyệt không hỗ trợ nhận dữ liệu dạng luồng.');
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += value.replace(/\r\n/g, '\n');
+    let end: number;
+    while ((end = buffer.indexOf('\n\n')) !== -1) {
+      const block = buffer.slice(0, end);
+      buffer = buffer.slice(end + 2);
+      let event = 'message';
+      let data = '';
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('data:')) data += line.slice(5).trim();
+      }
+      const payload = data ? JSON.parse(data) : {};
+      if (event === 'conversation') handlers.onConversation?.(String(payload.id));
+      else if (event === 'products') handlers.onProducts((payload.products as ApiAiProduct[]).map(toProductCard));
+      else if (event === 'delta') handlers.onDelta(String(payload.text ?? ''));
+      else if (event === 'error') throw new Error(payload.message || 'Trợ lý AI tạm thời chưa sẵn sàng.');
+      else if (event === 'done') return;
+    }
+  }
+  throw new Error('Kết nối tới trợ lý AI bị gián đoạn, vui lòng thử lại.');
 }
 
 const apiService: AiService = {
   async ask(message, history) {
     const { data } = await api.post<{ reply: string; products?: ApiAiProduct[] }>('/ai/chat', {
       message,
-      history: history.map((m) => ({ role: m.role, content: m.text })),
+      history: toHistory(history),
     });
+    return { reply: data.reply, products: data.products?.map(toProductCard) };
+  },
+  async listConversations() {
+    const { data } = await api.get<{ data: AiConversationSummary[] }>('/me/ai/conversations');
+    return data.data;
+  },
+  async getConversation(id) {
+    const { data } = await api.get<{
+      _id: string;
+      messages: { role: 'user' | 'assistant'; text: string; products?: ApiAiProduct[] }[];
+    }>(`/me/ai/conversations/${id}`);
     return {
-      reply: data.reply,
-      products: data.products?.map((sp) => ({
-        _id: sp._id,
-        TenSP: sp.TenSP,
-        TenThuongHieu: sp.ThuongHieu?.TenTH ?? '',
-        GiaThapNhat: sp.GiaThapNhat,
-        GiaCaoNhat: sp.GiaCaoNhat,
-        AnhChinh: sp.AnhChinh,
-      })),
+      _id: data._id,
+      messages: data.messages.map((m) => ({ ...m, products: m.products?.map(toProductCard) })),
     };
+  },
+  async deleteConversation(id) {
+    await api.delete(`/me/ai/conversations/${id}`);
+  },
+  async askStream(message, history, handlers, signal, conversationId) {
+    let res: Response;
+    try {
+      res = await fetch(`${import.meta.env.VITE_API_URL}/ai/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // có token -> backend bật chế độ tư vấn chuyên sâu cho khách hàng
+          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+        },
+        body: JSON.stringify({ message, history: toHistory(history), conversationId: conversationId ?? undefined }),
+        signal,
+      });
+    } catch (err) {
+      if (signal?.aborted) return;
+      throw new Error('Không kết nối được tới máy chủ. Kiểm tra backend đã chạy chưa.', { cause: err });
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.message ?? 'Có lỗi xảy ra. Thử lại sau.');
+    }
+    try {
+      await readSseStream(res, handlers);
+    } catch (err) {
+      if (signal?.aborted) return;
+      throw err;
+    }
   },
 };
 
