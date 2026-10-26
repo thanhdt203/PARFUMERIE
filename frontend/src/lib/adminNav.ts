@@ -149,7 +149,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: BrainCircuit,
         roles: ADMIN_ONLY,
         phase: 6,
-        description: 'Prompt base, embedding sản phẩm và thử hỏi AI.',
+        description: 'Hướng dẫn và tri thức của trợ lý AI, lịch sử phản hồi và thử hỏi AI.',
       },
       {
         path: '/admin/cai-dat',

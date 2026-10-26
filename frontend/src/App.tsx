@@ -26,6 +26,7 @@ const OrdersPage = lazy(() => import('./pages/admin/OrdersPage'));
 const VouchersPage = lazy(() => import('./pages/admin/VouchersPage'));
 const InventoryPage = lazy(() => import('./pages/admin/InventoryPage'));
 const CustomersPage = lazy(() => import('./pages/admin/CustomersPage'));
+const AiKnowledgePage = lazy(() => import('./pages/admin/AiKnowledgePage'));
 
 function App() {
   return (
@@ -67,7 +68,7 @@ function App() {
           {/* chỉ admin: staff gõ URL trực tiếp sẽ bị đưa về /admin */}
           <Route element={<RoleRoute allow={['admin']} />}>
             <Route path="nguoi-dung" element={<ComingSoonPage />} />
-            <Route path="tri-thuc-ai" element={<ComingSoonPage />} />
+            <Route path="tri-thuc-ai" element={<AiKnowledgePage />} />
             <Route path="cai-dat" element={<ComingSoonPage />} />
           </Route>
 

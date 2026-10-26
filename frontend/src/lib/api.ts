@@ -8,6 +8,8 @@ export const setAccessToken = (token: string | null) => {
   accessToken = token;
 };
 
+export const getAccessToken = () => accessToken;
+
 const api = axios.create({ baseURL, withCredentials: true });
 
 // gắn access token vào mọi request
