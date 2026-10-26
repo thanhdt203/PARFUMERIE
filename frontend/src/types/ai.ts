@@ -45,4 +45,8 @@ export interface AiConversation {
   title: string;
   updatedAt: number;
   messages: AiMessage[];
+  /** Đã lưu trên server (khách hàng đăng nhập): id là _id của server */
+  saved?: boolean;
+  /** false = mới có tiêu đề trong danh sách, chưa tải nội dung tin nhắn */
+  loaded?: boolean;
 }

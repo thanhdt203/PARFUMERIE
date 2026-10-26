@@ -50,3 +50,17 @@ docker compose down -v
 ```
 
 Source code được mount vào container. Vite, Nodemon và Uvicorn tự reload khi file tương ứng thay đổi.
+
+## Email reset mật khẩu (Quản lý người dùng)
+
+Trang Admin > Người dùng gửi mật khẩu mới qua email. Đặt các biến sau (shell hoặc file `.env` cạnh `compose.yaml`) rồi `docker compose up -d --build backend`:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=ban@gmail.com
+SMTP_PASS=mat-khau-ung-dung
+MAIL_FROM="Parfumerie <ban@gmail.com>"
+```
+
+Chưa đặt `SMTP_HOST`: môi trường dev chỉ ghi log backend, production sẽ báo lỗi 503. Nhân viên cũ chưa có email thì cần bổ sung trường `Email` trước khi reset được.

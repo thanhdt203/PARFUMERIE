@@ -141,7 +141,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: ShieldCheck,
         roles: ADMIN_ONLY,
         phase: 5,
-        description: 'Danh sách nhân viên, phân quyền và khóa tài khoản.',
+        description: 'Phân quyền nhân viên, khóa / mở khóa tài khoản và reset mật khẩu.',
       },
       {
         path: '/admin/tri-thuc-ai',

@@ -23,6 +23,11 @@ export const protectedRoute = (req, res, next) => {
                 return res.status(404).json({ message: 'Người dùng không tồn tại.' });
             }
 
+            // bị khóa giữa chừng thì access token đang dùng cũng mất hiệu lực
+            if (user.BiKhoa) {
+                return res.status(403).json({ message: 'Tài khoản đã bị khóa.' });
+            }
+
             req.user = user;
             req.role = decoded.role === 'customer' ? 'customer' : user.VaiTro;
             next();
@@ -50,7 +55,7 @@ export const optionalAuth = (req, res, next) => {
         try {
             const Model = decoded.role === 'customer' ? KhachHang : NhanVien;
             const user = await Model.findById(decoded.userId).select('-MatKhau');
-            if (user) {
+            if (user && !user.BiKhoa) {
                 req.user = user;
                 req.role = decoded.role === 'customer' ? 'customer' : user.VaiTro;
             }

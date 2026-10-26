@@ -72,6 +72,11 @@ export const signIn = async (req, res) => {
             return res.status(401).json({ message: "Tài khoản hoặc mật khẩu không chính xác." });
         }
 
+        // chỉ báo khóa sau khi đã đúng mật khẩu để không lộ tài khoản nào tồn tại
+        if (user.BiKhoa) {
+            return res.status(403).json({ message: "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên." });
+        }
+
         const accessToken = jwt.sign(
             { userId: user._id, role },
             process.env.ACCESS_TOKEN_SECRET,

@@ -1,91 +1,125 @@
 import { create } from 'zustand';
 import { getErrorMessage } from '../lib/errors';
 import { aiService } from '../services/aiService';
+import type { AiConversationSummary } from '../services/aiService';
 import type { AiConversation, AiMessage } from '../types/ai';
+import { toast } from './toastStore';
 
 /** Khách chưa đăng nhập (chế độ dùng thử): chỉ được hỏi chừng này câu mỗi phiên, không lưu lịch sử */
 export const GUEST_LIMIT = 5;
 
 const GUEST = 'guest';
-const MAX_CONVERSATIONS = 30;
 const TITLE_MAX = 40;
-
-const storageKey = (ownerId: string) => `parfumerie-ai-chats:${ownerId}`;
-
-function readStored(ownerId: string): AiConversation[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(storageKey(ownerId)) ?? '[]');
-    return Array.isArray(parsed) ? (parsed as AiConversation[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeStored(ownerId: string, list: AiConversation[]): void {
-  try {
-    localStorage.setItem(storageKey(ownerId), JSON.stringify(list.slice(0, MAX_CONVERSATIONS)));
-  } catch {
-    // bỏ qua: chỉ mất khả năng lưu lịch sử
-  }
-}
+const FOLLOW_UPS = ['Mùi nào lưu hương lâu nhất?', 'So sánh các mùi này', 'Có bản chiết 10ml không?'];
 
 let seq = 0;
 const newId = (prefix: string) => `${prefix}${Date.now().toString(36)}${(seq++).toString(36)}`;
 const makeTitle = (q: string) => (q.length > TITLE_MAX ? `${q.slice(0, TITLE_MAX - 1).trimEnd()}…` : q);
 
+/** Yêu cầu đang chạy, để hủy khi đổi tài khoản */
+let controller: AbortController | null = null;
+
+const fromSummary = (s: AiConversationSummary): AiConversation => ({
+  id: s._id,
+  title: s.TieuDe || 'Cuộc tư vấn',
+  updatedAt: Date.parse(s.updatedAt) || Date.now(),
+  messages: [],
+  saved: true,
+  loaded: false,
+});
+
 interface AiChatState {
   /** "guest" hoặc _id người dùng; null = chưa gọi hydrate */
   owner: string | null;
+  /** true: khách hàng đăng nhập, lịch sử lưu trên server (tài khoản khác thì chỉ lưu tạm trong phiên) */
+  serverHistory: boolean;
   conversations: AiConversation[];
   activeId: string | null;
   sending: boolean;
+  /** Đang tải danh sách / nội dung hội thoại từ server */
+  loadingHistory: boolean;
   /** Số câu khách đã hỏi trong phiên (chỉ dùng cho chế độ dùng thử) */
   guestAsked: number;
 
-  /** Gọi khi biết ai đang dùng: người dùng thì nạp lịch sử đã lưu, khách thì bắt đầu trống */
-  hydrate: (ownerId: string | null) => void;
+  hydrate: (ownerId: string | null, serverHistory: boolean) => void;
   newChat: () => void;
   select: (id: string) => void;
-  remove: (id: string) => void;
+  remove: (id: string) => Promise<void>;
   send: (raw: string) => Promise<void>;
 }
 
 export const useAiChatStore = create<AiChatState>((set, get) => ({
   owner: null,
+  serverHistory: false,
   conversations: [],
   activeId: null,
   sending: false,
+  loadingHistory: false,
   guestAsked: 0,
 
-  hydrate: (ownerId) => {
+  hydrate: (ownerId, serverHistory) => {
     const key = ownerId ?? GUEST;
     if (get().owner === key) return; // đã nạp rồi (vd quay lại trang) thì giữ nguyên
+    controller?.abort();
+    controller = null;
     set({
       owner: key,
-      conversations: ownerId ? readStored(ownerId) : [],
+      serverHistory,
+      conversations: [],
       activeId: null,
       sending: false,
+      loadingHistory: serverHistory,
       guestAsked: 0,
     });
+    if (!serverHistory) return;
+
+    aiService
+      .listConversations()
+      .then((list) => {
+        if (get().owner !== key) return;
+        set((state) => {
+          const have = new Set(state.conversations.map((c) => c.id));
+          return {
+            loadingHistory: false,
+            conversations: [...state.conversations, ...list.filter((i) => !have.has(i._id)).map(fromSummary)],
+          };
+        });
+      })
+      .catch(() => {
+        if (get().owner === key) set({ loadingHistory: false });
+      });
   },
 
   newChat: () => {
     if (get().sending) return;
-    // khách không có lịch sử nên cuộc cũ bỏ luôn
-    set(get().owner === GUEST ? { conversations: [], activeId: null } : { activeId: null });
+    // tài khoản không lưu lịch sử thì cuộc cũ bỏ luôn
+    set(get().serverHistory ? { activeId: null } : { conversations: [], activeId: null });
   },
 
   select: (id) => {
-    if (!get().sending) set({ activeId: id });
+    const s = get();
+    if (s.sending) return;
+    set({ activeId: id });
+    const conv = s.conversations.find((c) => c.id === id);
+    if (conv?.saved && !conv.loaded) void loadMessages(id);
   },
 
-  remove: (id) => {
-    if (get().sending) return;
-    set((s) => ({
-      conversations: s.conversations.filter((c) => c.id !== id),
-      activeId: s.activeId === id ? null : s.activeId,
+  remove: async (id) => {
+    const s = get();
+    if (s.sending) return;
+    const conv = s.conversations.find((c) => c.id === id);
+    if (conv?.saved) {
+      try {
+        await aiService.deleteConversation(id);
+      } catch (err) {
+        toast.error(getErrorMessage(err));
+        return;
+      }
+    }
+    set((state) => ({
+      conversations: state.conversations.filter((c) => c.id !== id),
+      activeId: state.activeId === id ? null : state.activeId,
     }));
-    persist();
   },
 
   send: async (raw) => {
@@ -95,15 +129,18 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
     const isGuest = s.owner === GUEST;
     if (isGuest && s.guestAsked >= GUEST_LIMIT) return;
 
-    const owner = s.owner;
     const current = s.conversations.find((c) => c.id === s.activeId);
+    if (current && current.loaded === false) return; // chưa tải xong nội dung cuộc này
+
+    const owner = s.owner;
     const history = current?.messages ?? [];
-    const convId = current?.id ?? newId('c');
     const userMsg: AiMessage = { id: newId('m'), role: 'user', text: question };
+    const botMsg: AiMessage = { id: newId('m'), role: 'assistant', text: '' };
+    let convId = current?.id ?? newId('c');
 
     const next: AiConversation = current
-      ? { ...current, messages: [...current.messages, userMsg], updatedAt: Date.now() }
-      : { id: convId, title: makeTitle(question), updatedAt: Date.now(), messages: [userMsg] };
+      ? { ...current, messages: [...current.messages, userMsg, botMsg], updatedAt: Date.now() }
+      : { id: convId, title: makeTitle(question), updatedAt: Date.now(), messages: [userMsg, botMsg], loaded: true };
 
     set({
       conversations: [next, ...s.conversations.filter((c) => c.id !== convId)],
@@ -111,29 +148,75 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
       sending: true,
       guestAsked: isGuest ? s.guestAsked + 1 : s.guestAsked,
     });
-    persist();
 
-    let reply: AiMessage;
+    const alive = () => get().owner === owner;
+    const patchBot = (fn: (m: AiMessage) => AiMessage) => {
+      if (!alive()) return;
+      set((state) => ({
+        conversations: state.conversations.map((c) =>
+          c.id === convId ? { ...c, messages: c.messages.map((m) => (m.id === botMsg.id ? fn(m) : m)) } : c,
+        ),
+      }));
+    };
+
+    const ctrl = new AbortController();
+    controller = ctrl;
     try {
-      const res = await aiService.ask(question, history);
-      reply = { id: newId('m'), role: 'assistant', text: res.reply, products: res.products, suggestions: res.suggestions };
+      await aiService.askStream(
+        question,
+        history,
+        {
+          // server đã lưu hội thoại mới: đổi id tạm sang id thật để lần hỏi sau nối tiếp đúng cuộc
+          onConversation: (serverId) => {
+            if (!alive()) return;
+            const old = convId;
+            convId = serverId;
+            set((state) => ({
+              conversations: state.conversations.map((c) => (c.id === old ? { ...c, id: serverId, saved: true } : c)),
+              activeId: state.activeId === old ? serverId : state.activeId,
+            }));
+          },
+          onProducts: (products) => patchBot((m) => ({ ...m, products })),
+          onDelta: (text) => patchBot((m) => ({ ...m, text: m.text + text })),
+        },
+        ctrl.signal,
+        current?.saved ? current.id : null,
+      );
+      patchBot((m) => (m.products?.length && !m.suggestions ? { ...m, suggestions: FOLLOW_UPS } : m));
     } catch (err) {
-      reply = { id: newId('m'), role: 'assistant', text: `Xin lỗi, mình chưa trả lời được lúc này. ${getErrorMessage(err)}` };
+      const msg = err instanceof Error ? err.message : getErrorMessage(err);
+      patchBot((m) => ({
+        ...m,
+        text: m.text ? `${m.text}\n\n(${msg})` : `Xin lỗi, mình chưa trả lời được lúc này. ${msg}`,
+      }));
+    } finally {
+      if (alive()) {
+        if (controller === ctrl) controller = null;
+        set({ sending: false });
+      }
     }
-
-    if (get().owner !== owner) return; // trong lúc chờ đã đăng nhập/đăng xuất: bỏ kết quả
-    set((state) => ({
-      sending: false,
-      conversations: state.conversations.map((c) =>
-        c.id === convId ? { ...c, messages: [...c.messages, reply], updatedAt: Date.now() } : c,
-      ),
-    }));
-    persist();
   },
 }));
 
-/** Người dùng đã đăng nhập thì lưu lịch sử vào trình duyệt; khách thì không lưu */
-function persist(): void {
-  const { owner, conversations } = useAiChatStore.getState();
-  if (owner && owner !== GUEST) writeStored(owner, conversations);
+/** Tải nội dung tin nhắn của một hội thoại đã lưu trên server */
+async function loadMessages(id: string): Promise<void> {
+  useAiChatStore.setState({ loadingHistory: true });
+  try {
+    const conv = await aiService.getConversation(id);
+    useAiChatStore.setState((state) => ({
+      conversations: state.conversations.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              loaded: true,
+              messages: conv.messages.map((m) => ({ id: newId('m'), role: m.role, text: m.text, products: m.products })),
+            }
+          : c,
+      ),
+    }));
+  } catch (err) {
+    toast.error(getErrorMessage(err));
+  } finally {
+    useAiChatStore.setState({ loadingHistory: false });
+  }
 }

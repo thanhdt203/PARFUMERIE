@@ -15,10 +15,11 @@ const START_SUGGESTIONS = [
 ];
 
 export function AiChatPage() {
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { conversations, activeId, sending, guestAsked, owner, hydrate, newChat, select, remove, send } = useAiChatStore();
+  const { conversations, activeId, sending, loadingHistory, guestAsked, owner, hydrate, newChat, select, remove, send } =
+    useAiChatStore();
 
   const [text, setText] = useState('');
   const [sideOpen, setSideOpen] = useState(false);
@@ -26,16 +27,19 @@ export function AiChatPage() {
 
   const isGuest = !user;
   const ownerId = user?._id ?? null;
+  const serverHistory = role === 'customer'; // chỉ khách hàng đăng nhập mới có lịch sử lưu trên server
   const limited = isGuest && guestAsked >= GUEST_LIMIT;
 
   const active = conversations.find((c) => c.id === activeId);
   const messages = active?.messages ?? [];
   const last = messages[messages.length - 1];
+  const openingHistory = Boolean(active?.saved && active.loaded === false);
+  const typing = sending && (last?.role === 'user' || (last?.role === 'assistant' && !last.text));
 
   // nạp lịch sử của đúng người dùng (khách thì bắt đầu trống)
   useEffect(() => {
-    if (!loading) hydrate(ownerId);
-  }, [loading, ownerId, hydrate]);
+    if (!loading) hydrate(ownerId, serverHistory);
+  }, [loading, ownerId, serverHistory, hydrate]);
 
   // câu hỏi từ ô "Hỏi trợ lý AI" ở trang chủ: gửi luôn một lần rồi xóa khỏi state của route
   const pending = useRef((location.state as { question?: string } | null)?.question ?? null);
@@ -52,7 +56,7 @@ export function AiChatPage() {
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, sending, activeId]);
+  }, [messages.length, last?.text.length, sending, activeId]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -79,10 +83,12 @@ export function AiChatPage() {
 
           <p className="aic__label">LỊCH SỬ TƯ VẤN</p>
           <ul className="aic__history">
-            {isGuest ? (
-              <li className="aic__empty">Chế độ dùng thử không lưu lịch sử.</li>
+            {!serverHistory ? (
+              <li className="aic__empty">
+                {isGuest ? 'Chế độ dùng thử không lưu lịch sử.' : 'Chỉ tài khoản khách hàng mới lưu lịch sử.'}
+              </li>
             ) : conversations.length === 0 ? (
-              <li className="aic__empty">Chưa có cuộc tư vấn nào.</li>
+              <li className="aic__empty">{loadingHistory ? 'Đang tải…' : 'Chưa có cuộc tư vấn nào.'}</li>
             ) : (
               conversations.map((c) => (
                 <li key={c.id} className={c.id === activeId ? 'aic__item is-active' : 'aic__item'}>
@@ -137,7 +143,9 @@ export function AiChatPage() {
 
           <div className="aic__log" ref={logRef} role="log" aria-live="polite">
             <div className="aic__thread">
-              {messages.length === 0 && !sending ? (
+              {openingHistory ? (
+                <p className="aic__empty">Đang tải cuộc trò chuyện…</p>
+              ) : messages.length === 0 && !sending ? (
                 <div className="aic__welcome">
                   <Sparkles size={28} aria-hidden="true" />
                   <h2>Bạn đang tìm mùi hương nào?</h2>
@@ -153,7 +161,7 @@ export function AiChatPage() {
               ) : (
                 messages.map((m) => (
                   <div key={m.id} className={`aic__msg aic__msg--${m.role}`}>
-                    <p className="aic__bubble">{m.text}</p>
+                    {m.text && <p className="aic__bubble">{m.text}</p>}
                     {m.products && m.products.length > 0 && (
                       <div className="aic__products">
                         {m.products.map((p) => (
@@ -165,7 +173,7 @@ export function AiChatPage() {
                 ))
               )}
 
-              {sending && (
+              {typing && (
                 <div className="aic__msg aic__msg--assistant">
                   <p className="aic__bubble aic__bubble--typing" aria-label="AI đang trả lời">
                     <span /> <span /> <span />
@@ -199,10 +207,10 @@ export function AiChatPage() {
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Mô tả phong cách, dịp sử dụng, mùi bạn thích…"
                 maxLength={300}
-                disabled={limited}
+                disabled={limited || openingHistory}
                 aria-label="Nhập câu hỏi cho trợ lý AI"
               />
-              <button type="submit" className="aic__send" disabled={sending || limited || !text.trim()} aria-label="Gửi">
+              <button type="submit" className="aic__send" disabled={sending || limited || openingHistory || !text.trim()} aria-label="Gửi">
                 <Send size={18} aria-hidden="true" />
               </button>
             </form>

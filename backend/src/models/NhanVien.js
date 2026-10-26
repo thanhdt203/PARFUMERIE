@@ -31,6 +31,26 @@ const nhanVienSchema = new mongoose.Schema({
         type: String,
         enum: ['staff', 'admin'],
         default: 'staff'
+    },
+    // Email dùng để gửi mật khẩu mới khi admin reset (nhân viên cũ có thể chưa có)
+    Email: {
+        type: String,
+        maxlength: 100,
+        unique: true,
+        sparse: true,
+        trim: true
+    },
+    NgaySinh: {
+        type: Date
+    },
+    DiaChi: {
+        type: String,
+        maxlength: 150
+    },
+    // true = tài khoản bị admin khóa, không đăng nhập được
+    BiKhoa: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

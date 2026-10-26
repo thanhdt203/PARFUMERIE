@@ -17,6 +17,7 @@ import adminOrderRoute from './routers/adminOrderRoute.js';
 import adminVoucherRoute from './routers/adminVoucherRoute.js';
 import adminCustomerRoute from './routers/adminCustomerRoute.js';
 import adminInventoryRoute from './routers/adminInventoryRoute.js';
+import adminUserRoute from './routers/adminUserRoute.js';
 import aiRoute from './ai/aiRoute.js';
 import aiHistoryRoute from './ai/aiHistoryRoute.js';
 import adminAiRoute from './ai/adminAiRoute.js';
@@ -53,6 +54,7 @@ app.use('/api/admin/orders', authorize('staff', 'admin'), adminOrderRoute);
 app.use('/api/admin/vouchers', authorize('staff', 'admin'), adminVoucherRoute);
 app.use('/api/admin/customers', authorize('staff', 'admin'), adminCustomerRoute);
 app.use('/api/admin/inventory', authorize('staff', 'admin'), adminInventoryRoute);
+app.use('/api/admin/users', authorize('admin'), adminUserRoute);
 
 app.use((err, req, res, next) => {
     if (err.type === 'entity.parse.failed') {

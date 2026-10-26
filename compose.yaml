@@ -45,6 +45,12 @@ services:
       PORT: 5001
       AI_SERVICE_URL: http://ai-service:8000
       AI_TIMEOUT_MS: 20000
+      # Gửi email reset mật khẩu (để trống: dev chỉ ghi log, không gửi thật)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     ports:
       - "127.0.0.1:5001:5001"
     volumes:
