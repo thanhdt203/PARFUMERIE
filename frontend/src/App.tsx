@@ -5,6 +5,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { HomePage } from './pages/HomePage';
+import { AiChatPage } from './pages/AiChatPage';
 import { ProductListPage } from './pages/ProductListPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { WishlistPage } from './pages/CustomerPages';
@@ -25,6 +26,7 @@ const OrdersPage = lazy(() => import('./pages/admin/OrdersPage'));
 const VouchersPage = lazy(() => import('./pages/admin/VouchersPage'));
 const InventoryPage = lazy(() => import('./pages/admin/InventoryPage'));
 const CustomersPage = lazy(() => import('./pages/admin/CustomersPage'));
+const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
 const AiKnowledgePage = lazy(() => import('./pages/admin/AiKnowledgePage'));
 
 function App() {
@@ -35,6 +37,7 @@ function App() {
     <Routes>
       {/* ai cũng vào được (kể cả chưa đăng nhập) */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/tu-van-ai" element={<AiChatPage />} />
       <Route path="/nuoc-hoa" element={<ProductListPage />} />
       <Route path="/nuoc-hoa/:id" element={<ProductDetailPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -65,7 +68,7 @@ function App() {
 
           {/* chỉ admin: staff gõ URL trực tiếp sẽ bị đưa về /admin */}
           <Route element={<RoleRoute allow={['admin']} />}>
-            <Route path="nguoi-dung" element={<ComingSoonPage />} />
+            <Route path="nguoi-dung" element={<UsersPage />} />
             <Route path="tri-thuc-ai" element={<AiKnowledgePage />} />
             <Route path="cai-dat" element={<ComingSoonPage />} />
           </Route>

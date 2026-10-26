@@ -1,0 +1,428 @@
+/* ---------- Khung toàn màn hình của SiteLayout (variant="app") ---------- */
+.site.site--app {
+  height: 100svh;
+  min-height: 0;
+}
+.site.site--app .site__main--app {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ---------- Bố cục: cột lịch sử + khung chat ---------- */
+.aic {
+  position: relative;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* cột trái */
+.aic__side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 16px;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+}
+.aic__new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--green);
+  color: var(--text-on-green);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aic__new:hover:not(:disabled) {
+  background: var(--green-hover);
+}
+.aic__new:disabled {
+  background: var(--green-disabled);
+  cursor: not-allowed;
+}
+.aic__label {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.aic__history {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+.aic__empty {
+  padding: 8px 4px;
+  color: var(--text-disabled);
+  font-size: 13px;
+}
+.aic__item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.aic__item:hover {
+  background: var(--bg-soft);
+}
+.aic__item.is-active {
+  border-color: var(--green);
+  background: var(--bg);
+}
+.aic__item-main {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.aic__item-del {
+  display: inline-flex;
+  flex: none;
+  padding: 6px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-disabled);
+  opacity: 0;
+  cursor: pointer;
+}
+.aic__item:hover .aic__item-del,
+.aic__item-del:focus-visible {
+  opacity: 1;
+}
+.aic__item-del:hover:not(:disabled) {
+  background: var(--line);
+  color: var(--error);
+}
+.aic__trial {
+  padding: 10px 12px;
+  border: 1px dashed var(--text-disabled);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.aic__trial a,
+.aic__limit a {
+  color: var(--green);
+  text-decoration: underline;
+}
+.aic__trial-left {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+/* cột phải */
+.aic__chat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.aic__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px dashed var(--text-disabled);
+  color: var(--text-strong);
+}
+.aic__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.aic__sub {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.aic__menu {
+  display: none;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.aic__log {
+  flex: 1;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+}
+.aic__thread {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.aic__msg {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.aic__msg--user {
+  align-items: flex-end;
+}
+.aic__msg--assistant {
+  align-items: stretch;
+}
+.aic__bubble {
+  margin: 0;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.aic__msg--user .aic__bubble {
+  max-width: 80%;
+  background: var(--green);
+  color: var(--text-on-green);
+}
+.aic__msg--assistant .aic__bubble {
+  align-self: flex-start;
+  max-width: 92%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+.aic__products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+/* gợi ý bấm nhanh */
+.aic__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.aic__chip {
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.aic__chip:hover:not(:disabled) {
+  border-color: var(--green);
+  color: var(--green);
+}
+.aic__chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* màn hình chào khi chưa có tin nhắn */
+.aic__welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 12px 12px;
+  color: var(--green);
+  text-align: center;
+}
+.aic__welcome h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 24px;
+  font-weight: 600;
+}
+.aic__welcome p {
+  max-width: 460px;
+  margin: 0 0 8px;
+  color: var(--text-muted);
+}
+.aic__welcome .aic__chips {
+  justify-content: center;
+}
+
+/* dấu ... khi AI đang trả lời */
+.aic__bubble--typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.aic__bubble--typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-disabled);
+  animation: aic-dot 1s infinite ease-in-out;
+}
+.aic__bubble--typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.aic__bubble--typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes aic-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* ô nhập ở đáy */
+.aic__composer {
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+.aic__limit {
+  max-width: 860px;
+  margin: 0 auto 8px;
+  color: var(--error-dark);
+  font-size: 13px;
+}
+.aic__form {
+  display: flex;
+  gap: 10px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.aic__input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1.5px solid var(--green);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  outline: 0;
+}
+.aic__input:focus {
+  box-shadow: 0 0 0 3px var(--green-soft);
+}
+.aic__input:disabled {
+  border-color: var(--line);
+  background: var(--bg-disabled);
+}
+.aic__input::placeholder {
+  color: var(--text-placeholder);
+}
+.aic__send {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--green);
+  color: var(--text-on-green);
+  cursor: pointer;
+}
+.aic__send:hover:not(:disabled) {
+  background: var(--green-hover);
+}
+.aic__send:disabled {
+  background: var(--green-disabled);
+  cursor: not-allowed;
+}
+
+.aic__backdrop {
+  display: none;
+}
+
+/* ---------- Màn hình nhỏ: lịch sử thành ngăn kéo ---------- */
+@media (max-width: 820px) {
+  .aic {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .aic__side {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 6;
+    width: 280px;
+    max-width: 85%;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .aic.is-side-open .aic__side {
+    transform: none;
+    box-shadow: 4px 0 18px rgba(0, 0, 0, 0.15);
+  }
+  .aic.is-side-open .aic__backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .aic__menu {
+    display: inline-flex;
+  }
+  .aic__sub {
+    display: none;
+  }
+  .aic__log {
+    padding: 14px 12px;
+  }
+  .aic__composer {
+    padding: 10px 12px 12px;
+  }
+  .aic__msg--assistant .aic__bubble {
+    max-width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aic__bubble--typing span {
+    animation: none;
+  }
+  .aic__side {
+    transition: none;
+  }
+}

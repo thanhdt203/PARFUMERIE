@@ -1,0 +1,114 @@
+.aip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.aip__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  margin-bottom: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.aip__media img {
+  max-width: 80%;
+  max-height: 90%;
+  object-fit: contain;
+}
+.aip__media .pcard__placeholder {
+  height: 80%;
+}
+.aip__name {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.aip__notes {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.aip__match {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+}
+.aip__buy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.aip__select {
+  flex: none;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.aip__price {
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.aip__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+.aip__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 8px;
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--green);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.aip__btn:hover:not(:disabled) {
+  background: var(--bg-soft);
+}
+.aip__btn--primary {
+  background: var(--green);
+  color: var(--text-on-green);
+}
+.aip__btn--primary:hover:not(:disabled) {
+  background: var(--green-hover);
+}
+.aip__btn:disabled {
+  border-color: var(--green-disabled);
+  background: var(--green-disabled);
+  color: var(--text-on-green);
+  cursor: not-allowed;
+}
+.aip__btn:focus-visible,
+.aip__select:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}

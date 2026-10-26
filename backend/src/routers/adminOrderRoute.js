@@ -3,6 +3,7 @@ import {
     listOrders,
     getOrder,
     updateOrderStatus,
+    updatePaymentStatus,
     exportOrders,
 } from "../controllers/adminOrderController.js";
 
@@ -13,5 +14,6 @@ router.get("/export", exportOrders); // phải đặt trước "/:id"
 router.get("/", listOrders);
 router.get("/:id", getOrder);
 router.patch("/:id/trangthai", updateOrderStatus);
+router.patch("/:id/thanhtoan", updatePaymentStatus);
 
 export default router;

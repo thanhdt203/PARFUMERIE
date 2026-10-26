@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { TRANG_THAI_THANH_TOAN } from "../libs/bankTransfer.js";
 
 export const TRANG_THAI_DON_HANG = [
     "Chờ xác nhận",
@@ -23,6 +24,16 @@ const donHangSchema = new mongoose.Schema({
         type: String,
         enum: TRANG_THAI_DON_HANG,
         default: "Chờ xác nhận"
+    },
+    // trạng thái nhận tiền (khác với TrangThai giao hàng); đơn cũ chưa có trường này coi như chưa thanh toán
+    TrangThaiThanhToan: {
+        type: String,
+        enum: TRANG_THAI_THANH_TOAN,
+        default: "Chưa thanh toán"
+    },
+    NgayThanhToan: {
+        type: Date,
+        default: null
     },
     MaPTTT: {
         type: mongoose.Schema.Types.ObjectId,

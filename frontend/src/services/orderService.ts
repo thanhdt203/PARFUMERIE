@@ -46,6 +46,14 @@ export const orderService = {
     return data.data;
   },
 
+  /** Nhân viên xác nhận đã nhận tiền (true) hoặc hoàn tác (false). Đơn đã hủy thì backend trả 409. */
+  async updatePayment(id: string, daThanhToan: boolean): Promise<AdminOrderDetail> {
+    const { data } = await api.patch<DataResponse<AdminOrderDetail>>(`${BASE}/${id}/thanhtoan`, {
+      DaThanhToan: daThanhToan,
+    });
+    return data.data;
+  },
+
   /** Tải file CSV theo bộ lọc hiện tại (tối đa 5000 đơn mới nhất) */
   async exportCsv(filters: OrderFilterParams): Promise<void> {
     const response = await api.get<Blob>(`${BASE}/export`, {

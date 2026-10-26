@@ -45,6 +45,9 @@ export interface AdminOrderDetail {
   /** Tổng tiền các dòng hàng, chưa trừ giảm giá */
   TamTinh: number;
   TrangThai: TrangThaiDonHang;
+  /** Đã nhận tiền chưa (nhân viên xác nhận tay) */
+  TrangThaiThanhToan: 'Chưa thanh toán' | 'Đã thanh toán';
+  NgayThanhToan: IsoDate | null;
   GhiChu: string;
   HoTenKH: string;
   Email: string;

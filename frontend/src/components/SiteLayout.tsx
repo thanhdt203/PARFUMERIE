@@ -259,11 +259,14 @@ interface SiteLayoutProps {
   /** Các cấp trung gian giữa "Trang chủ" và trang hiện tại */
   trail?: { label: string; to: string }[];
   children: ReactNode;
+  /** "app": khung toàn màn hình (không breadcrumb, không footer, không nút liên hệ nổi) — dùng cho trang chat AI */
+  variant?: 'default' | 'app';
 }
 
-export default function SiteLayout({ crumb, trail, children }: SiteLayoutProps) {
+export default function SiteLayout({ crumb, trail, children, variant = 'default' }: SiteLayoutProps) {
+  const isApp = variant === 'app';
   return (
-    <div className="site">
+    <div className={isApp ? 'site site--app' : 'site'}>
       <div className="site__topbar" />
 
       <header className="site__header">
@@ -276,6 +279,7 @@ export default function SiteLayout({ crumb, trail, children }: SiteLayoutProps) 
         </div>
       </header>
 
+      {!isApp && (
       <div className="site__crumbs">
         <nav className="site__crumbs-inner" aria-label="Breadcrumb">
           <Link to="/">Trang chủ</Link>
@@ -291,11 +295,12 @@ export default function SiteLayout({ crumb, trail, children }: SiteLayoutProps) 
           </span>
         </nav>
       </div>
+      )}
 
-      <main className="site__main">{children}</main>
+      <main className={isApp ? 'site__main site__main--app' : 'site__main'}>{children}</main>
 
-      <Footer />
-      <FloatingContact />
+      {!isApp && <Footer />}
+      {!isApp && <FloatingContact />}
       <ToastViewport />
     </div>
   );

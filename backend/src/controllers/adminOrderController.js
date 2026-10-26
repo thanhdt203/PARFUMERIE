@@ -234,6 +234,8 @@ const layChiTiet = async (id) => {
         TongTien: don.TongTien,
         TamTinh: chiTiet.reduce((sum, d) => sum + d.ThanhTien, 0),
         TrangThai: don.TrangThai,
+        TrangThaiThanhToan: don.TrangThaiThanhToan === "Đã thanh toán" ? "Đã thanh toán" : "Chưa thanh toán",
+        NgayThanhToan: don.NgayThanhToan ?? null,
         GhiChu: don.GhiChu ?? "",
         HoTenKH: don.HoTenKH,
         Email: don.Email,
@@ -337,6 +339,55 @@ export const updateOrderStatus = async (req, res) => {
         return res.status(200).json({ message: "Đã cập nhật trạng thái đơn hàng", data });
     } catch (error) {
         console.error("Lỗi khi gọi updateOrderStatus", error);
+        return res.status(500).json({ message: "Lỗi hệ thống" });
+    }
+};
+
+// ---------- Xác nhận đã nhận tiền ----------
+// body: { DaThanhToan: true | false }. Nhân viên đối chiếu sao kê rồi bấm xác nhận (false để hoàn tác khi bấm nhầm).
+// Không đụng tới TrangThai giao hàng; đơn đã hủy thì không đổi được.
+export const updatePaymentStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!isObjectId(id)) return res.status(400).json({ message: "Mã không hợp lệ" });
+
+        const daThanhToan = req.body?.DaThanhToan;
+        if (typeof daThanhToan !== "boolean") {
+            return res.status(400).json({ message: "DaThanhToan phải là true hoặc false" });
+        }
+
+        // đổi có điều kiện: 2 người bấm cùng lúc thì chỉ 1 yêu cầu thành công
+        const daDoi = await DonHang.findOneAndUpdate(
+            {
+                _id: id,
+                TrangThai: { $ne: "Đã hủy" },
+                TrangThaiThanhToan: daThanhToan ? { $ne: "Đã thanh toán" } : "Đã thanh toán"
+            },
+            {
+                $set: {
+                    TrangThaiThanhToan: daThanhToan ? "Đã thanh toán" : "Chưa thanh toán",
+                    NgayThanhToan: daThanhToan ? new Date() : null
+                }
+            },
+            { new: true }
+        ).select("_id");
+
+        if (!daDoi) {
+            const don = await DonHang.findById(id).select("TrangThai").lean();
+            if (!don) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+            if (don.TrangThai === "Đã hủy") {
+                return res.status(409).json({ message: "Đơn đã hủy, không cập nhật thanh toán được" });
+            }
+            return res.status(409).json({ message: "Trạng thái thanh toán đã được cập nhật, hãy tải lại" });
+        }
+
+        const data = await layChiTiet(id);
+        return res.status(200).json({
+            message: daThanhToan ? "Đã xác nhận nhận tiền" : "Đã bỏ xác nhận thanh toán",
+            data
+        });
+    } catch (error) {
+        console.error("Lỗi khi gọi updatePaymentStatus", error);
         return res.status(500).json({ message: "Lỗi hệ thống" });
     }
 };

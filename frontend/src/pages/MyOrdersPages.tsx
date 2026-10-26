@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { CheckCircle2, Package } from 'lucide-react';
+import { Check, CheckCircle2, Copy, Package } from 'lucide-react';
 import SiteLayout from '../components/SiteLayout';
 import { BottlePlaceholder } from '../components/shop/ProductCard';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,7 @@ import { formatDateTime, formatOrderCode, formatVnd } from '../lib/format';
 import { getOrderStatusTone } from '../lib/orderStatus';
 import { variantLabel } from '../lib/productOptions';
 import { customerOrderService } from '../services/customerOrderService';
-import type { MyOrder, MyOrderItem, MyOrderListResponse } from '../types/customerOrder';
+import type { BankTransferInfo, MyOrder, MyOrderItem, MyOrderListResponse } from '../types/customerOrder';
 import '../components/shop/ProductCard.css';
 import './MyOrdersPages.css';
 
@@ -218,6 +218,93 @@ export function MyOrdersPage() {
 
 // ---------- Chi tiết đơn: /don-hang/:id ----------
 
+// ---------- Chuyển khoản bằng QR ----------
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // trình duyệt chặn clipboard (http, quyền...) thì khách vẫn tự bôi đen để chép được
+    }
+  };
+
+  return (
+    <button type="button" className="myorders__copy" onClick={() => void copy()} aria-label={`Sao chép ${label}`}>
+      {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+      <span>{copied ? 'Đã chép' : 'Chép'}</span>
+    </button>
+  );
+}
+
+function TransferQr({ info }: { info: BankTransferInfo }) {
+  const [qrFailed, setQrFailed] = useState(false);
+
+  return (
+    <section className="myorders__pay" aria-labelledby="pay-title">
+      <h2 id="pay-title" className="myorders__pay-title">
+        Chuyển khoản để hoàn tất đơn hàng
+      </h2>
+      <div className="myorders__pay-body">
+        {qrFailed ? (
+          <p className="myorders__pay-qrfail">Không tải được mã QR, bạn có thể chuyển khoản theo thông tin bên cạnh.</p>
+        ) : (
+          <img
+            className="myorders__pay-qr"
+            src={info.QrUrl}
+            alt={`Mã QR chuyển khoản ${formatVnd(info.SoTien)}, nội dung ${info.NoiDung}`}
+            width={220}
+            height={220}
+            onError={() => setQrFailed(true)}
+          />
+        )}
+
+        <dl className="myorders__pay-info">
+          <div>
+            <dt>Ngân hàng</dt>
+            <dd>{info.NganHang}</dd>
+          </div>
+          {info.TenTaiKhoan && (
+            <div>
+              <dt>Chủ tài khoản</dt>
+              <dd>{info.TenTaiKhoan}</dd>
+            </div>
+          )}
+          <div>
+            <dt>Số tài khoản</dt>
+            <dd>
+              {info.SoTaiKhoan}
+              <CopyButton text={info.SoTaiKhoan} label="số tài khoản" />
+            </dd>
+          </div>
+          <div>
+            <dt>Số tiền</dt>
+            <dd>
+              <strong>{formatVnd(info.SoTien)}</strong>
+              <CopyButton text={String(info.SoTien)} label="số tiền" />
+            </dd>
+          </div>
+          <div>
+            <dt>Nội dung chuyển khoản</dt>
+            <dd>
+              <strong>{info.NoiDung}</strong>
+              <CopyButton text={info.NoiDung} label="nội dung chuyển khoản" />
+            </dd>
+          </div>
+        </dl>
+      </div>
+      <p className="myorders__pay-note">
+        Quét mã bằng app ngân hàng, giữ nguyên số tiền và nội dung để cửa hàng đối chiếu. Sau khi nhận được tiền, cửa hàng
+        sẽ xác nhận thanh toán cho đơn của bạn.
+      </p>
+    </section>
+  );
+}
+
 function OrderDetail({ order, justOrdered, onChanged }: { order: MyOrder; justOrdered: boolean; onChanged: () => void }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -261,6 +348,7 @@ function OrderDetail({ order, justOrdered, onChanged }: { order: MyOrder; justOr
 
         <div className="myorders__detail">
           <div>
+            {order.ChuyenKhoan && <TransferQr info={order.ChuyenKhoan} />}
             <ul className="myorders__items">
               {order.ChiTiet.map((item) => (
                 <li key={item._id} className="myorders__item">
@@ -303,7 +391,10 @@ function OrderDetail({ order, justOrdered, onChanged }: { order: MyOrder; justOr
               </div>
               <div>
                 <dt>Thanh toán</dt>
-                <dd>{order.PhuongThucThanhToan?.TenPTTT ?? 'Không rõ'}</dd>
+                <dd>
+                  {order.PhuongThucThanhToan?.TenPTTT ?? 'Không rõ'}
+                  {order.TrangThaiThanhToan === 'Đã thanh toán' && ' (đã thanh toán)'}
+                </dd>
               </div>
               {order.Voucher && (
                 <div>

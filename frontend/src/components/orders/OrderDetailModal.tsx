@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Package } from 'lucide-react';
+import { Banknote, Package } from 'lucide-react';
 import Button from '../common/Button';
 import ConfirmDialog from '../common/ConfirmDialog';
 import ErrorState from '../common/ErrorState';
@@ -69,6 +69,21 @@ export default function OrderDetailModal({ orderId, onClose, onChanged }: OrderD
 
   const [changing, setChanging] = useState<TrangThaiDonHang | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [payBusy, setPayBusy] = useState(false);
+
+  const changePayment = async (daThanhToan: boolean) => {
+    setPayBusy(true);
+    try {
+      const next = await orderService.updatePayment(orderId, daThanhToan);
+      setUpdated(next);
+      toast.success(daThanhToan ? 'Đã xác nhận nhận tiền' : 'Đã bỏ xác nhận thanh toán');
+      onChanged();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setPayBusy(false);
+    }
+  };
 
   const changeStatus = async (target: TrangThaiDonHang) => {
     setChanging(target);
@@ -96,16 +111,21 @@ export default function OrderDetailModal({ orderId, onClose, onChanged }: OrderD
         open
         size="lg"
         onClose={onClose}
-        busy={changing !== null}
+        busy={changing !== null || payBusy}
         title={order ? `Đơn hàng ${formatOrderCode(order._id)}` : 'Đơn hàng'}
         description={order ? `Đặt lúc ${formatDateTime(order.NgayDat)}` : undefined}
         footer={
           <>
-            <Button onClick={onClose} disabled={changing !== null}>
+            <Button onClick={onClose} disabled={changing !== null || payBusy}>
               Đóng
             </Button>
+            {order && order.TrangThaiThanhToan !== 'Đã thanh toán' && order.TrangThai !== 'Đã hủy' && (
+              <Button icon={Banknote} loading={payBusy} disabled={changing !== null} onClick={() => changePayment(true)}>
+                Xác nhận đã nhận tiền
+              </Button>
+            )}
             {order && canCancel && (
-              <Button variant="danger" disabled={changing !== null} onClick={() => setConfirmCancel(true)}>
+              <Button variant="danger" disabled={changing !== null || payBusy} onClick={() => setConfirmCancel(true)}>
                 {ACTION_LABEL['Đã hủy']}
               </Button>
             )}
@@ -115,7 +135,7 @@ export default function OrderDetailModal({ orderId, onClose, onChanged }: OrderD
                   key={status}
                   variant="primary"
                   loading={changing === status}
-                  disabled={changing !== null}
+                  disabled={changing !== null || payBusy}
                   onClick={() => changeStatus(status)}
                 >
                   {ACTION_LABEL[status]}
@@ -131,6 +151,19 @@ export default function OrderDetailModal({ orderId, onClose, onChanged }: OrderD
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge tone={getOrderStatusTone(order.TrangThai)}>{order.TrangThai}</StatusBadge>
+              <StatusBadge tone={order.TrangThaiThanhToan === 'Đã thanh toán' ? 'success' : 'warning'}>
+                {order.TrangThaiThanhToan}
+              </StatusBadge>
+              {order.TrangThaiThanhToan === 'Đã thanh toán' && order.TrangThai !== 'Đã hủy' && (
+                <button
+                  type="button"
+                  className="text-xs text-ink-muted underline hover:text-ink disabled:opacity-50"
+                  disabled={payBusy || changing !== null}
+                  onClick={() => changePayment(false)}
+                >
+                  Bỏ xác nhận
+                </button>
+              )}
               <span className="text-sm text-ink-muted">
                 Xử lý bởi {order.NhanVien ? order.NhanVien.HoTenNV : 'chưa có ai nhận đơn'}
               </span>

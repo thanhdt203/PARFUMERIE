@@ -26,6 +26,14 @@ const khachHangSchema = new mongoose.Schema({
         required: true,
         unique: true,
         maxlength: 15
+    },
+    NgaySinh: {
+        type: Date
+    },
+    // true = tài khoản bị admin khóa, không đăng nhập được
+    BiKhoa: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
